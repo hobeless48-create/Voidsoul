@@ -1,0 +1,131 @@
+=== EVENT SYSTEM DATA (events_db.ts) ===
+
+[STORY TEMPLATE STRUCTURE]
+interface StoryTemplate {
+  title: string;          // Display title with emoji
+  desc: string;           // Description text
+  stars?: number;         // Difficulty/rarity (1-3)
+  choices: {              // Array of 2-3 choices
+    label: string;         // Button text
+    effectText: string;    // Tooltip/description
+    effect?: ChoiceEffect; // Effect logic (see below)
+  }[];
+}
+
+[EVENT ROLL SYSTEM]
+- Player sees 3 choices (from map roll: 1-2 combat, 3 elite, 4/6 event, 5 shop)
+- Events are pulled randomly from MYSTERY_STORIES array
+- IMPORTANT: Duplicate events should not appear in same 3-choice roll
+- Pre-boss area always: "Rest Before Boss" + Boss Door + Final Preparations
+
+[EVENT CATEGORIES & COUNT]
+
+GENERAL EVENTS (always available):
+1. Wandering Merchant - Buy rings (Brass/Silver)
+2. Rest Stop - Heal 30% or push forward
+3. Small Chapel - Heal 20 or pass
+4. Natural Spring - Heal 20 or pass
+5. Forgotten Pouch - LCK check for 20 gold
+
+CAVE EVENTS (6):
+1. Collapsing Tunnel - STR dig/DEX sneak
+2. Glowing Crystal Vein - STR mine/leave
+3. Lost Miner Ghost - FTH/spirit/gold
+4. Underground Stream - CON swim/INT freeze
+5. Ancient Rune Wall - INT decipher/STR smash
+6. Trapped Chest - DEX disarm/STR force
+
+ABANDONED TRAIL EVENTS (6):
+1. Overgrown Path Split - XP shortcut/safe route
+2. Abandoned Caravan - Scavenge loot
+3. Wounded Traveler - FTH heal or take supplies
+4. Suspicious Campfire - Trade or ambush
+5. Ancient Signpost - INT read or ignore
+6. Berry Thicket - Gather (risk poison) or pass
+
+LICH CASTLE EVENTS (7):
+1. Cursed Throne Room - Power with poison cost
+2. Library of Forbidden Tomes - INT study/burn
+3. Trapped Servant - FTH free or bind
+4. Armory Relics - Claim weapon or leave
+5. Hidden Altar - Sacrifice for talent point
+6. Collapsing Corridor - DEX rush/careful
+7. Lich's Diary - Boss intel XP
+
+VOID EVENTS (6):
+1. Void Rift Edge - DEX jump/INT stabilize
+2. Whispering Void - FTH resist/succumb
+3. Floating Debris - Salvage voidstone
+4. Shadow Mirror - Fight reflection/shatter
+5. Energy Siphon - Sacrifice HP/destroy crystal
+6. Corrupted Artifact - Claim or purify
+
+PEACEFUL CITY EVENTS (5):
+1. Welcoming Feast - Heal with risk
+2. Market Stall - Trade or haggle
+3. Suspicious Villager - Interrogate/ignore
+4. Bank Vault - Deposit or steal
+5. Theater Performance - Watch buff or investigate
+
+WHITE CITADEL EVENTS (5):
+1. Angelic Statue - FTH pray/desecrate
+2. Holy Archive - INT study/burn
+3. Fallen Choir - CHA join/fight
+4. Light Barrier - FTH cross/CON force
+5. Pride Trial - Talent at HP cost/reject
+
+DUNGEON EVENTS (6):
+1. Dark Corridor - Light torch/dark sneak
+2. Pressure Plate Puzzle - INT solve/bypass
+3. Cursed Sarcophagus - Open (risk)/seal
+4. Underground River - CON swim/find bridge
+5. Trap Room - DEX disarm/shield rush
+6. Lost Adventurer - STR rescue/leave
+
+TRADING CITY EVENTS (5):
+1. Black Market - Buy/haggle
+2. Guild Quest Board - Combat bounty/decline
+3. Tavern Brawl - Join/mediate
+4. Caravan Escort - Combat escort/refuse
+5. Auction House - Bid 60g or watch
+
+SKY ISLAND EVENTS (5):
+1. Floating Platform - DEX jump/wind magic
+2. Ancient Sky Temple - Explore for feather
+3. Harpy Nest - Clear or negotiate
+4. Cloud Bridge - Cross carefully/reinforce
+5. Dragon Shrine - Offer tribute/blessing
+
+MYSTERIOUS LAB EVENTS (5):
+1. Test Tube Puzzle - INT mix/leave
+2. Containment Breach - Combat/exploit
+3. Scientist Notes - INT read/burn
+4. Energy Core - Extract (damage)/stabilize
+5. Mutant Chamber - Fight/sneak
+
+FRONTLINE EVENTS (5):
+1. Reinforce the Line - Combat/leave
+2. Supply Raid - Combat/let pass
+3. Commander Briefing - Listen/ignore
+4. Wounded Camp - FTH heal/pass
+5. Demonic Portal - Close/avoid
+
+HORIZON CASTLE EVENTS (6):
+1. Siege Planning - INT plan/assault
+2. Castle Infiltration - DEX stealth/smash
+3. Artifact Vault - Break in/leave
+4. Ally Rally - Rally allies/go alone
+5. Curse Removal - Purify/skip
+6. Final Camp - Full rest/push forward
+
+SPECIAL EVENTS:
+- "Rest Before the Storm" - Available before every boss, 3 choices: rest, prepare, scout
+- "Boss Door" - Available before boss room, 3 choices: rest 50%, enter boss, CON buff
+
+[EFFECT TYPE REFERENCE]
+ChoiceEffect types used:
+  type: "item" | "gold" | "hp" | "hp_pct" | "xp" | "stat_check" | "random" | "talent_point" | "status" | "combat" | "none"
+  
+  stat_check: { stat: "STR"|"DEX"|"CON"|"INT"|"FTH"|"CHA"|"LCK", threshold: number, successEffect, failEffect }
+  
+  Effects can chain via successEffect/failEffect for multi-reward outcomes

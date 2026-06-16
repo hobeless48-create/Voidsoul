@@ -1,0 +1,20 @@
+{
+  "id": "profile_2m99qh8af",
+  "username": "VerificationUnit",
+  "password": "7",
+  "level": 1,
+  "xp": 0,
+  "gold": 150,
+  "talentPoints": 0,
+  "unlockedTalents": [],
+  "avatarUrl": "",
+  "class": "Warrior",
+  "race": "Human",
+  "talentPointsByClass": {
+    "Warrior": 0
+  },
+  "unlockedTalentsByClass": {
+    "Warrior": []
+  },
+  "inventory": []
+}

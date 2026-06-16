@@ -1,0 +1,93 @@
+=== APP / PROGRESSION / PATH SYSTEM DATA (App.tsx) ===
+
+[GAME PHASES]
+"LOBBY" | "MAP" | "BATTLE" | "CAMP" | "PROMOTION" | "GAMEOVER" | "VICTORY" | "PROFILE" | "PATH_CHOICE"
+
+[CORE STATE]
+- party: Character[] - Active party members
+- inventory: Item[] - Shared materials/items
+- sharedStash: Item[] - Stash items
+- gold: number - Party gold (starts 150)
+- chapter: number - Current chapter (1-5)
+- area: number - Current area within chapter (0 to maxArea-1)
+- maxArea: number - Lanes in current chapter (8 for Ch1, 5 for Ch2-5)
+- way: number - Path choice 1 (after Ch1: 1=Cave, 2=Dungeon)
+- path: number - Path choice 2 (after Ch3: 1=Lich/Sky, 2=City/Frontline)
+
+[CHAPTER PROGRESSION MAP]
+Forest (Ch1, 8 areas, maxArea=8)
+  ↓ PATH_CHOICE (select way)
+  ├── Way 1: Cave (Ch2, 5 areas)
+  │   ↓
+  │   Abandoned Trail (Ch3, 5 areas)
+  │   ↓ PATH_CHOICE (select path)
+  │   ├── Path 1: Lich Castle (Ch4, 5 areas)
+  │   │   ↓
+  │   │   Void (Ch5, 5 areas) → VICTORY
+  │   └── Path 2: Peaceful City (Ch4, 5 areas)
+  │       ↓
+  │       White Citadel (Ch5, 5 areas) → VICTORY
+  └── Way 2: Dungeon (Ch2, 5 areas)
+      ↓
+      Trading City (Ch3, 5 areas)
+      ↓ PATH_CHOICE (select path)
+      ├── Path 1: Sky Island (Ch4, 5 areas)
+      │   ↓
+      │   Mysterious Lab (Ch5, 5 areas) → VICTORY
+      └── Path 2: Frontline (Ch4, 5 areas)
+          ↓
+          Horizon Castle (Ch5, 5 areas) → VICTORY
+
+[MAP NODE GENERATION] generateMapNodes(ch, ar, isBossArea, forceShop, way, path)
+3-choice roll system (virtual d6):
+  1-2 = combat node
+  3 = elite combat node
+  4 or 6 = event node
+  5 = shop node
+  - At most 1 shop per roll
+  - forceShop flag forces roll[0] = 5
+
+Pre-boss area returns: rest, boss door, event (Final Preparations)
+
+[AREA LABEL POOLS - Ch_way_path keyed]
+Each area type has themed labels for combat, elite, event nodes
+
+[BATTLE START] handleSelectNode(node)
+- combat/elite/boss → spawnEnemyGroup(chapter, area, isElite, isBoss, undefined, way, path) → BATTLE
+- rest → heal 50% HP → CAMP
+- shop/event → CAMP
+
+[COMBAT VICTORY] handleCombatVictory(survivingParty, loot)
+- Rewards gold + materials
+- Boss clear (area >= maxArea):
+  - Full heal + 1 talent point
+  - Set forceShopNext = true
+  - Chapter progression logic:
+    - Ch1 boss → PATH_CHOICE (way selection)
+    - Ch2 boss → Ch3 automatic
+    - Ch3 boss → PATH_CHOICE (path selection)
+    - Ch4 boss → Ch5 automatic
+    - Ch5 boss → VICTORY
+- Non-boss clear: area + 1, check promotions, CAMP
+
+[PROMOTION SYSTEM] getPendingPromotion(char)
+- Level 15+ and not advanced → can advance to advanced class
+- Level 30+ and advanced not T3 → can advance to T3 class
+- Level 50+ and T3 not subclass → can choose subclass
+- Level 75+ and T3 with subclass not acknowledged → T5 acknowledge
+
+[P2P SYNC] broadcastGlobalState()
+- syncBridge.send with type "SYNC_GLOBAL_STATE"
+- Non-host players receive full state sync
+- Voting system: SYNC_VOTES with majority threshold
+- Player quit/kick: PLAYER_QUIT, PLAYER_KICKED types
+
+[CAMP SYSTEM] handleLeaveCampground()
+- Generates next area's nodes via generateMapNodes()
+- Handles forceShop flag
+- Transitions back to MAP
+
+[CHAPTER BACKGROUND COLORS] getChapterBgClass()
+- Ch1: emerald tint
+- Way1 Ch2: stone, Ch3: amber, Ch4p1: purple, Ch4p2: rose, Ch5p1: indigo, Ch5p2: sky
+- Way2 Ch2: red, Ch3: yellow, Ch4p1: cyan, Ch4p2: orange, Ch5p1: lime, Ch5p2: violet

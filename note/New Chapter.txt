@@ -1,0 +1,181 @@
+- **Difficulty**: Scaled 1-5★ (monster strength, HP, damage, special mechanics). Matches core enemy rosters (e.g., Chapter 1 Forest enemies).
+- **Monsters**: Exactly 5 types per encounter section with detailed abilities. Format: **Name | Skill/Ability Description | URL**
+- **Story**: Narrative descriptions before player choices.
+- **Bosses**: Detailed with rewards (new/expanded from shop_item.txt style).
+- **Integration**: Aligns with 4 main chapters but expands user's paths. Talent unlocks, class synergies, grid positioning, and status effects (Burn, Poison, etc.) apply.
+- **Endings**: Branched based on paths, with Fallen Stack risks.
+- **Way/Path**: After the group defeated the boss there will be a page pop up (similar to the class selection to let the group of player choose where they wanna go. or preview the next chapter.
+- **Background url** : It will be a background use of the box container
+================================================================================
+CHAPTER 1: THE GLIMMERING WOODS (FOREST TRIALS) - Difficulty Base: 1
+================================================================================
+**Story**: The party travels through a dense, mystical woodland corrupted by shadow magic leaking from the catacombs below. Ancient trees whisper forgotten warnings as goblins raid caravans and beasts stalk the shadows. (Matches core Chapter 1.)
+**1: The forest: it will still be the same thing we use. but the other will be delete and rewrite. all the mon ,event , boss and path aftert he chapter 1.
+
+**Way 1 - Main Path**
+
+**2.1 | Cave**
+- **Background url** :https://img.freepik.com/free-vector/dark-cave-with-blue-gemstones-walls-vector-cartoon-illustration-underground-mine-tunnel-with-sparkling-diamond-stones-rocky-mineral-stalactites-dungeon-treasure-search-game-background_107791-24382.jpg?semt=ais_hybrid&w=740&q=80
+- **Difficulty**: 1
+- **Story**: After venturing deeper, the group encounters a dimly lit cave promising fortune in ores and relics. Echoes of picks on stone fill the air.
+- **Monsters**:
+  - **Skeleton Miner | Swings pickaxe for physical damage + Bleed DoT (12 value, 3 turns). High defense on ore-covered limbs. | https://terraria-archive.fandom.com/wiki/Undead_Miner**
+  - **Cave Goblin Scout | High initiative dart attack applying Poison. Low HP but evasive. | https://www.myminifactory.com/object/3d-print-goblin-raiders-classic-monsters-fantasy-miniatures-373340**
+  - **Moss-Covered Sporeling | Releases Poison cloud (column AoE) and regenerates in damp areas. Weak to Fire. | https://monster.fandom.com/wiki/Slime**
+  - **Stone Elemental Fragment | Taunts frontline (Column 1) and has high flat DEF. Slow but tanky. | https://en.wikipedia.org/wiki/Skeleton_(undead)**
+  - **Bat Swarm | Multi-hit low-damage attacks with high dodge. Applies Slow on crit. | https://runescape.wiki/w/Goblin_Raider**
+- **Boss**: Ore Eater (huge worm with ore-encrusted segments. High DEF on ore parts, x2 crit damage to fleshy parts).
+- **Reward**: Iron Shell Leggings (+25 DEF, Block Chance set to 0% but +15% damage reduction). Ties to crafting.
+
+**3.1 | Abandoned Trail**
+- **Background url** :https://cms-artifacts.motionarray.com/content/motion_array/1322754/Forest_Path_Flat_Cartoon_Background_high_resolution_preview_1322754.jpg?Expires=2078922816&Key-Pair-Id=K2ZDLYDZI2R1DF&Signature=F5hbFB3hteO2~TfHv0rvYHAzZocLYJhE76Kbe7g81b4UIGdGSwOolq6kYxxLn6AAT~GhiA-zaV831NHfp~aPYGKKHxjdZoM9JdzwU1xj5oN80gZW3j4yLaQO7aAWI30bnYlj3lNzbddqSMnF52FgOce-QZTk17lqz3OaNUZEgXSTWfibpn9rbPLl-3Ml1tT3~CvC1wCODIXIVZQTWv0rN5cg1vL2OhkecdvEyNjUgiDWB7OWKrJEFdJFR0cFa3mNV8Vy7l0mcsGBDbOsYJHlmRLYH7nloZrciX9g3jvN65jtbCHx7OHFX~tRX3RVzfTj6vcifjGuKzKXN1wBSRDfLA__
+- **Difficulty**: 1
+- **Story**: Victorious, the party finds an exit from the cave leading to an overgrown abandoned trail. Distant goblin camps smoke on the horizon.
+- **Monsters**:
+  - **Goblin Raider | Melee rush with gold/material steal chance. Applies Cripple on hit. | https://www.d20pfsrd.com/bestiary/unique-monsters/cr-4/goblin-raider-goblin-fighter-5/**
+  - **Goblin Archer | Column-piercing arrow attack. Applies Slow. | https://www.myminifactory.com/object/3d-print-goblin-raiders-classic-monsters-fantasy-miniatures-373340**
+  - **Goblin Shaman | Low HP caster applying Burn or Poison DoT. Summons minor minions. | https://runescape.wiki/w/Goblin_Raider**
+  - **Dire Wolf Mount | High ATK bite with Bleed. Carries goblin rider for combo attacks. | https://en.wikipedia.org/wiki/Skeleton_(undead)**
+  - **Trap-setter Goblin | Deploys ground traps causing Stagger when stepped on. High LCK. | https://www.pinterest.com/flfordguy/goblins-gremlins-and-orcs/**
+- **Boss**: Goblin General (summons Goblin minions every 2 turns. Moderate stats).
+- **Reward**: General Fang Necklace (Necklace: +20 ATK, +25% Aggro).
+
+**Abandoned Trail: Path 1**
+
+**4.1.1 | Lich Castle**
+- **Background url** :https://www.shutterstock.com/image-vector/spooky-interior-dark-gothic-castle-600nw-2739873475.jpg
+- **Difficulty**: 3
+- **Story**: The trail leads into darker woods revealing a crumbling Lich Castle. Undead guardians stir as the party approaches.
+- **Monsters**:
+  - **Skeleton Warrior | Guard stance melee tank. High block chance. | https://en.wikipedia.org/wiki/Skeleton_(undead)**
+  - **Crypt Ghoul | Lifesteal claws with Poison. Targets low-HP allies. | https://terraria-archive.fandom.com/wiki/Undead_Miner**
+  - **Wraith Specter | High dodge phase attacks. Applies minor Death Mark. | https://en.wikipedia.org/wiki/Skeleton_(undead)**
+  - **Bone Archer | Ranged column pierce with Bleed arrows. | https://www.pinterest.com/chessdope/skeleton-warriors/**
+  - **Necromancer Acolyte | Summons minor skeletons. Void-tinged damage. | https://en.wikipedia.org/wiki/Skeleton_(undead)**
+- **Boss**: Lich Archmage (High ATK, low HP for boss. Summons Death Knight up to 2x).
+- **Reward**: Soul Devourer Ring (+20 ATK, +10 INT/FTH/CHA, 20% lifesteal on damage).
+
+**5.1.1 | Void**
+- **Background url** :https://images.stockcake.com/public/0/a/1/0a121534-268a-428c-b203-cbaa60aac546_large/purple-void-portal-stockcake.jpg
+- **Difficulty**: 4
+- **Story**: A massive void rift opens after the castle falls, sucking the party in.
+- **Monsters**:
+  - **Voidling Spawn | Multiplies on low HP death. Small but swarming. | https://riskofrain2.fandom.com/wiki/Voidling**
+  - **Rift Wraith | Phases through reality for high dodge. Void DoT damage. | http://kpogl.wikidot.com/monster:voidling**
+  - **Shadow Amalgam | Combines fallen enemies for boosted HP/ATK. | https://riskofrain2.fandom.com/wiki/Voidling**
+  - **Anomaly Tendril | Pulls targets to center column. Applies Stagger. | https://riskofrain2.fandom.com/wiki/Voidling**
+  - **Corrupted Echo | Mirrors one PC's previous skill at 70% power. | http://kpogl.wikidot.com/monster:voidling**
+- **Boss**: Slaad (Brain-like entity. Strong AoE and DoT skills).
+- **Reward**: Ending 1 - Encounter the Void (Bad End). Party trapped eternally.
+
+**Abandoned Trail: Path 2**
+
+**4.1.2 | Peaceful City (?)**
+- **Background url** :https://media.istockphoto.com/id/1181725243/vector/cartoon-nature-scene-with-medieval-city-street.jpg?s=170667a&w=0&k=20&c=sWmRJak4ZiMKhhz-ReEdmYM3x4_F175SZiq7eIKa3uc=
+- **Difficulty**: 5
+- **Story**: The trail exits the forest into what seems a beautiful, welcoming city. Kind villagers greet them... until the illusion shatters, revealing Sin of Greed.
+- **Monsters**:
+  - **Greedy Villager | Low stats but steals gold/Energy. High gold drop. | https://en.wikipedia.org/wiki/Skeleton_(undead)**
+  - **Illusion Thief | Temporary item/Energy steal with high crit backstab. | https://www.myminifactory.com/object/3d-print-goblin-raiders-classic-monsters-fantasy-miniatures-373340**
+  - **Hoarder Construct | Tanky gold-reflect damage. Scales with party wealth. | https://monster.fandom.com/wiki/Slime**
+  - **Merchant Assassin | High crit, applies Cripple. Disguised as trader. | https://runescape.wiki/w/Goblin_Raider**
+  - **Golden Golem | High DEF with gold-based buffs and taunt. | https://en.wikipedia.org/wiki/Skeleton_(undead)**
+- **Boss**: Sin of Greed (Stats scale with party's highest gold: +1% all stats per 50 gold. Disables item use).
+- **Reward**: Abundance Crown (Helmet: +50 to all stats).
+
+**5.1.2 | The White Citadel**
+- **Background url** :https://img.freepik.com/premium-photo/angelic-castle-paradise_839169-38698.jpg
+- **Difficulty**: 1 (easy monster, boss extreme)
+- **Story**: Escaping the false city, the party presses on and reaches a gleaming White Citadel, home to fallen angels and Sin of Pride.
+- **Monsters**:
+  - **Fallen Angel Scout | Holy-corrupted ranged attacks with Burn. High FTH. | https://www.reddit.com/r/dndnext/comments/3iv4xu/homebrew_monster_a_day_fallen_angel/**
+  - **Corrupted Seraph | Shielding allies while dealing AoE holy damage. | https://food-fantasy.fandom.com/wiki/Fallen_Angels**
+  - **Winged Betrayer | High dodge + counter on dodge. Applies Vulnerable. | https://www.5esrd.com/database/creature/angel-fallen/**
+  - **Divine Deserter | Taunt with pride debuffs reducing enemy ATK. | https://www.pinterest.com/ideas/fallen-angel-dnd-art/933007621469/**
+  - **Shadowed Herald | DoT curse + silence on targets. | https://www.reddit.com/r/dndnext/comments/3iv4xu/homebrew_monster_a_day_fallen_angel/**
+- **Boss**: Sin of Pride - Lucifer (1,000,000 visual HP, deals 50% max HP AoE per attack).
+- **Reward**: Regardless of outcome → Ending 2: The Worst Possible Luck (Bad End).
+
+**Way 2 - Alternative Path**
+
+**2.2 | Dungeon**
+- **Background url** :https://t3.ftcdn.net/jpg/08/86/00/40/360_F_886004017_0wK4DSw929wQq3a2lfqocuO4bqqVfTPv.jpg
+- **Difficulty**: 2
+- **Story**: After days in the woods, the party discovers an ancient dungeon entrance and enters seeking power.
+- **Monsters**:
+  - **Restless Crypt Ghoul | Lifesteal + Poison claws. Targets low HP. | https://terraria-archive.fandom.com/wiki/Undead_Miner**
+  - **Skeleton Archer | Ranged column attacks with Bleed. | https://en.wikipedia.org/wiki/Skeleton_(undead)**
+  - **Grave Sentry | Tank with taunt and shield. High DEF. | https://www.pinterest.com/chessdope/skeleton-warriors/**
+  - **Stone Gargoyle | Aerial dive with Stagger. High block. | https://en.wikipedia.org/wiki/Skeleton_(undead)**
+  - **Bone Amalgamation | Combines bones for temporary HP boost. | https://en.wikipedia.org/wiki/Skeleton_(undead)**
+- **Boss**: Death Knight (High ATK/HP, low DEF. Lich subordinate).
+- **Reward**: Shattered Necklace (Ring: +10 ATK, 5% lifesteal).
+
+**3.2 | Trading City**
+- **Background url** :https://media.istockphoto.com/id/1459368957/vector/cartoon-scene-with-beautiful-medieval-castles-far-east-kingdom-illustration-for-children.jpg?s=612x612&w=0&k=20&c=qoUCeiBa735bo8eTOlVxRGNt7V7OysB-yRUyAlAXcWc=
+- **Difficulty**: 3
+- **Story**: Fresh from the dungeon, the party heads to a nearby trading city to sell loot.
+- **Monsters**:
+  - **Evil Adventurer Warrior | Mirrors player melee with taunt. | https://en.wikipedia.org/wiki/Skeleton_(undead)**
+  - **Rogue Rival | High crit backstab + Poison. | https://www.myminifactory.com/object/3d-print-goblin-raiders-classic-monsters-fantasy-miniatures-373340**
+  - **Mercenary Mage | AoE spells with Burn. | https://monster.fandom.com/wiki/Slime**
+  - **Corrupt Cleric | Healing self while smiting. | https://food-fantasy.fandom.com/wiki/Fallen_Angels**
+  - **Bandit Leader | Summons minions + gold steal. | https://runescape.wiki/w/Goblin_Raider**
+- **Boss**: Greedeus (1500 HP, scales ATK with player's gold minus 2500 threshold).
+- **Reward**: Greedeus's Ring (+20 ATK, +10 DEX, +25% gold gain).
+
+**Trading City: Path 1**
+
+**4.2.1 | Sky Island**
+- **Background url** :https://thumbs.dreamstime.com/b/whimsical-cartoon-backdrop-floating-island-lush-greenery-waterfalls-cascading-down-sides-bright-sun-shining-334004814.jpg
+- **Difficulty**: 3
+- **Story**: Rumors of a floating Sky Island draw the party seeking rare artifacts.
+- **Monsters**:
+  - **Sky Harpy | Column dive attacks with Slow. High initiative. | https://en.wikipedia.org/wiki/Skeleton_(undead)**
+  - **Storm Bird | Lightning chain attacks (multi-target). | https://riskofrain2.fandom.com/wiki/Voidling**
+  - **Aerial Serpent | Wraps targets for DoT + pull. | https://monster.fandom.com/wiki/Slime**
+  - **Cloud Elemental | AoE wind knockback + stagger. | https://en.wikipedia.org/wiki/Skeleton_(undead)**
+  - **Feathered Scout | Reveals party positions + minor DoTs. | https://www.pinterest.com/ideas/fallen-angel-dnd-art/933007621469/**
+- **Boss**: Ryu Jin (Chinese Dragon. 100k visual HP but only 10k effective. %HP attacks).
+- **Reward**: Essence Orb (Bracelet: +20 FTH, +30% outgoing healing).
+
+**5.1.2 | Mysterious Lab**
+- **Background url** :https://media.craiyon.com/2025-07-14/cubmr7jzQCC3PAQs4e5uvw.webp
+- **Difficulty**: 4
+- **Story**: Ryu Jin offers transport; a companion finds a secret lab passage.
+- **Monsters**:
+  - **Acidic Slime | High Poison DoT on hit. Splits when damaged. | https://monster.fandom.com/wiki/Slime**
+  - **Gelatinous Ooze | Engulfs targets (restrain + DoT). | https://en.wikipedia.org/wiki/Slime_(monster)**
+  - **Toxic Blob | AoE Poison cloud + summon smaller slimes. | https://www.reddit.com/r/worldbuilding/comments/154rxcu/a_guide_to_slime_monsters_of_looming_gaia_info_in/**
+  - **Crystal Slime | Reflects magic damage. High DEF. | https://monster.fandom.com/wiki/Slime**
+  - **Swarm Slime | Multi-hit small slimes that merge for bigger attacks. | https://en.wikipedia.org/wiki/Slime_(monster)**
+- **Boss**: Azelf (Mad scientist. Summons slimes for 90% DR passive. Poison attacks).
+- **Reward**: Ending 3 - Azelf detonates "Armstrong Cyclone Jet Armstrong Nuclear Bomb." City destroyed (Bad End).
+
+**Trading City: Path 2**
+
+**4.2.2 | Frontline**
+- **Background url** :https://i.pinimg.com/736x/b4/6a/52/b46a5280645201974fb5ea06cf6bf45b.jpg
+- **Difficulty**: 4
+- **Story**: News of struggling frontlines against demons prompts the party to assist.
+- **Monsters**:
+  - **Demon Knight | Heavy melee with taunt + Bleed. High HP. | https://www.5esrd.com/database/creature/demonic-knight/**
+  - **Hellhound | Fast Bleed/Burn bites. Pack tactics. | https://en.wikipedia.org/wiki/Skeleton_(undead)**
+  - **Void Imp | Fireball spam + summon lesser demons. | https://riskofrain2.fandom.com/wiki/Voidling**
+  - **Succubus Lure | Charm/debuff + lifesteal. High CHA. | https://food-fantasy.fandom.com/wiki/Fallen_Angels**
+  - **Armored Fiend | Tank with reflect damage. | https://www.d20pfsrd.com/bestiary/monster-listings/outsiders/demonic-knight-tohc/**
+- **Boss**: Demon King General Bael (Strong AoE, spawns 4 minions).
+- **Reward**: Magical Iron Plate (Chestplate: +30 DEF, 20% damage reduction all sources).
+
+**5.2.2 | Horizon Castle**
+- **Background url** :https://thumb.photo-ac.com/be/be32e049b954c052aa10230556c5f5bc_t.jpeg
+- **Difficulty**: 5
+- **Story**: Victorious on the front, the party spots Horizon Castle at dusk and investigates.
+- **Monsters**:
+  - **Demon Knight Elite | Enhanced taunt + AoE slash. | https://www.5esrd.com/database/creature/demonic-knight/**
+  - **Demon General | Command aura buffing nearby demons. | https://www.d20pfsrd.com/bestiary/monster-listings/outsiders/demonic-knight-tohc/**
+  - **Shadow Fiend | High dodge + Death Mark. | https://riskofrain2.fandom.com/wiki/Voidling**
+  - **Infernal Mage | Strong magic AoE with Burn. | https://food-fantasy.fandom.com/wiki/Fallen_Angels**
+  - **Blood Lord | Lifesteal + execute low HP targets. | https://en.wikipedia.org/wiki/Skeleton_(undead)**
+- **Boss**: Demon Lord Verath (Final-boss buffs, but balanced).
+- **Reward**: Ending 4 - Demons surrender; world finds uneasy peace (Good End). Lingering threats remain.

@@ -1,0 +1,557 @@
+================================================================================
+                  VOID SOUL / AN AVERAGE CAMPAIGN
+              100 EVENTS & ENCOUNTERS — REVISED FOR GAME SYSTEMS
+================================================================================
+Star Difficulty Rating
+1★ = Mundane / Safe
+2★ = Minor risk or roleplay
+3★ = Moderate challenge
+4★ = Hard / Dangerous
+5★ = Epic / Potentially campaign-altering
+
+================================================================================
+TRAVEL & EXPLORATION (1–3★ mostly)
+================================================================================
+
+(1★) Peaceful roadside shrine – a Cleric NPC sells minor blessings (+5 FTH for
+     next battle) and cheap healing potions. Cleric/High Priest PCs get a free
+     Regen buff (value 5, 2 turns).
+
+(1★) Abandoned merchant caravan with spoiled rations and a few copper coins.
+     Searching it yields 1x Wolf Pelt and a broken Iron Shield (not equippable,
+     but salvageable for 2x Iron Ore at camp).
+
+(2★) A traveling minstrel has composed an "epic ballad" about the party —
+     uncomfortably accurate in places. [CHA check] A Bard PC who passes can
+     Dissonance the crowd's laughter into awe, granting +10% party ATK for the
+     next combat. On fail, the party is Crippled (-25% damage) from embarrassment
+     for 1 turn.
+
+(2★) Dense fog rolls across the map node. The party must choose their lane
+     blind — the fog hides whether it leads to a campground, elite combat, or
+     merchant. [DEX check] Rogues or Archers with DEX 45+ can scout ahead and
+     reveal the true node type before committing.
+
+(2★) Ruined village market — scavengers are trading salvaged goods at high
+     prices. Iron Ore costs 2x gold here. However, a Rogue PC with LCK 40+
+     can pickpocket 1 free crafting material (random) without triggering a
+     combat encounter.
+
+(1★) A small general store in a surviving hamlet sells weapons, rations, and
+     common items. Restores the camp Feast phase early — the party may heal
+     30% max HP right now instead of waiting for the next campground node.
+
+(1★) A blacksmith offers basic armor repairs. All equipped Chestplate and
+     Helmet bonuses are refreshed. Warriors, Knights, and Berserkers get a
+     free +5 DEF bonus applied until the next battle.
+
+(2★) Mystic herb shop — glowing Magic Bloom variants line the shelves. Each
+     PC may drink one for a random buff: Regen (value 10, 3 turns), +15% crit
+     chance, or +20 DEF for 2 battles. Roll randomly; side effects include a
+     1-turn Stagger at the start of the next combat if the roll is odd.
+
+(3★) Corrupted ley line crossing — arcane energy warps the 3x3 grid at the
+     start of the next battle. All characters are randomly repositioned at
+     combat start. [INT check] Mage or Elementalist PCs who pass may choose
+     their own starting column instead of being moved randomly.
+
+(2★) A refugee caravan needs escort to the next safe node. Successfully
+     escorting them (no PC drops to 0 HP during the escort combat) rewards
+     the party with 3x Ancient Bone and 30 gold. If a PC gains a Fallen
+     Stack during the escort, the refugees scatter and the reward is lost.
+
+================================================================================
+SOCIAL & ROLEPLAY EVENTS
+================================================================================
+
+(2★) A grieving noble begs the party to find his lost daughter. [CHA check]
+     A Bard PC using Valor Anthem as a "rallying speech" auto-passes. Success
+     opens a side quest node; failure means the noble offers a lesser reward
+     (only gold, no crafting materials).
+
+(3★) A corrupt lord accuses the party of being demon spies and orders his
+     guards to attack. The battle begins with enemies in Taunt formation —
+     all guards target whoever stands in Column 1 (Frontline). Warriors and
+     Knights positioned there take focused fire immediately.
+
+(2★) A tavern debate about whether the Demon Lord is real grows heated. A
+     Bard PC can use Dissonance to break up the argument peacefully. Failing
+     the [CHA check] triggers a bar brawl — a low-stakes combat with
+     Stagger-heavy enemies but no Fallen Stack risk.
+
+(1★) A friendly inn with warm food and sturdy beds. The party enters the
+     Feast phase for free: heal 30% max HP, craft one item using available
+     materials, and deposit gold into the shared stash.
+
+(3★) A cultist disguised as a priest attempts to recruit the party by
+     offering "holy relics" (actually void-cursed items). [FTH check]
+     A Cleric or High Priest PC can expose the ruse with Purify, causing the
+     cultist to flee and dropping 2x Ancient Bone. On fail, one PC equips a
+     cursed Charm that applies Burn (value 8) at the start of every battle
+     until removed at a proper shop.
+
+(4★) A survivor of a destroyed city recognizes one PC's fighting style from
+     the invasion. Combat begins mid-conversation — the survivor summons
+     militia. All militia units spawn in Column 1 (Frontline) and immediately
+     Taunt your front-row character. The PC in question starts the battle with
+     the Vulnerable status (+50% damage taken, 2 turns).
+
+(3★) The ghost of a fallen king appears over the campground node, warning of
+     betrayal from within. No combat — but one random PC's talent tree node
+     is locked for the next battle (treat as if that node is unequipped).
+     [FTH check] A Cleric PC using Holy Light can put the ghost to rest and
+     restore the locked node.
+
+(2★) Children in a village square want the party to play "Heroes vs Demons."
+     A Warrior PC can volunteer for the role of "dungeon boss" — doing so
+     grants the whole party a Warcry buff (+15% ATK) as a morale bonus going
+     into the next combat.
+
+(4★) The High Priestess has a vision that one party member "resonates with an
+     old enemy's soul." That PC's aggro weight is doubled for the next battle
+     (enemies treat them as if their base aggro is ×2), regardless of class or
+     position.
+
+(3★) An Alliance officer delivers new orders with suspicious enthusiasm. He
+     insists the party take an "elite" combat node rather than the campground.
+     [CHA check] A Bard or Bard of Valor PC using Heroic Symphony can talk
+     the officer down and preserve the campground node option.
+
+================================================================================
+COMBAT ENCOUNTERS
+================================================================================
+
+(2★) Bandit ambush on the road. Bandits prioritize Column 1 targets. Their
+     leader is Crippled (-25% damage) if any PC used a Taunt skill on the
+     previous turn going into this event.
+
+(3★) A pack of corrupted wolves with demonic mutations. Two wolves enter
+     Vulnerable (+50% damage taken) when Bleed is applied. Rogues with the
+     Hemorrhage talent deal devastating damage here. One wolf per turn attempts
+     to Stagger a Column 1 character.
+
+(3★) Skeletal knights guard a fallen castle. They are immune to Bleed and
+     Poison. Burn, Holy damage (FTH scaling), and Mage AoE skills are the
+     recommended approach. Skeletons in the front row use Guard stance,
+     halving incoming damage and doubling their Block Chance.
+
+(4★) An Archdemon lieutenant — a vaguely familiar face — leads a raid.
+     He targets whichever PC has the highest STR stat first. He opens the
+     battle with a Vulnerable debuff on that PC. Defeating him drops 4x Iron
+     Ore and a rare weapon.
+
+(2★) Goblin raiders using stolen Alliance weapons. Their accuracy is poor
+     (base 60%) but they apply Stagger on critical hits. Rogues and Archers
+     can Shadow Step or reposition out of their attack column to avoid most
+     damage.
+
+(3★) Possessed townsfolk turn violent mid-conversation. They apply Bleed on
+     hit and enter a Berserk phase (Vulnerable to all damage, +30% ATK) when
+     below 30% HP. [FTH check] A Cleric using Purify on a townsfolk enemy
+     instantly incapacitates one without dealing damage.
+
+(4★) A demon-tainted dragon wyrmling occupies the Column 1–2 enemy cells.
+     Its breath attack hits the entire front column of allies with Burn (value
+     12, 2 turns). Warriors in Guard stance reduce this to value 6. Mages
+     using Mana Shield or Glacial Lance are especially valuable here.
+
+(5★) A rival hero party — failed experiments — charges the battlefield
+     screaming. Each enemy mirrors one PC's class (Warrior vs Warrior, Mage vs
+     Mage, etc.) and opens with that class's signature skill. They cannot be
+     Taunted. Defeating them drops one crafting material matching the mirrored
+     PC's primary stat gear.
+
+(3★) Elemental spirits corrupted by void energy. They rotate resistances each
+     turn: fire → physical → magic → holy. [INT check] A Mage or Elementalist
+     with Elemental Mastery talent can read the rotation and gain +20% damage
+     by targeting the active weakness.
+
+(4★) Valthorak's elite hell-knights ambush the party. Two hell-knights occupy
+     Frontline Column 1 and immediately use Guard stance. A third spawns in
+     Column 2 with the Taunt status targeting your highest-FTH PC. Killing all
+     three within 5 turns rewards a bonus Ancient Bone drop.
+
+================================================================================
+SHOP & ECONOMY EVENTS
+================================================================================
+
+(1★) A traveling potion vendor sells Healing Potions (restore 40 HP), Mana
+     Vials (restore 2 EN), and Antidotes (cleanse Burn/Poison/Bleed). Bard PCs
+     using Fortune's Tune before purchasing grant the party +10% chance to find
+     a rare item in the vendor's stock.
+
+(1★) Magic item auction in a neutral free city. The party may bid on a random
+     piece of gear. Rogue PCs with LCK 50+ may "acquire" one item without
+     bidding, bypassing the gold cost entirely.
+
+(1★) A black market dealer sells "cursed" relics. Each relic is actually a
+     plot-relevant Charm or Necklace slot item that grants a strong passive
+     but applies a minor DoT (Poison, value 3) to the wearer each battle.
+
+(2★) An enchanter offers to upgrade a weapon. The upgrade adds +20% scaling to
+     the weapon's primary stat. [INT check] On failure, the weapon gains the
+     Void Corruption property: the wielder takes Burn (value 5) whenever they
+     crit. A Mage PC auto-passes the INT check.
+
+(1★) General store in a walled town. Standard crafting materials available:
+     Iron Ore, Wolf Pelt, Magic Bloom, Ancient Bone. Prices are standard.
+     Warriors and Knights get a 10% discount on Iron Ore due to their
+     reputation.
+
+(2★) Exotic goods from fallen kingdoms — rare ingredients including double
+     batches of Magic Bloom and Ancient Bone. These can be used to craft
+     high-tier items like the Archmage Scepter or Talisman of Power at camp.
+
+(3★) The shopkeeper is a devil in disguise. He offers deals that are genuinely
+     excellent — but purchasing anything triggers a combat encounter as his
+     true form is revealed. The combat starts with the party Staggered for
+     turn 1. All purchased goods are kept regardless of combat outcome.
+
+(1★) An armorsmith specializes in holy-symbol engravings. Any Shield or
+     Chestplate equipped by a Cleric or High Priest gains +10 FTH scaling for
+     the next two battles if purchased here.
+
+(2★) An artifact merchant claims a necklace "hums when near true evil." It
+     functions as a Charm slot item granting +15 LCK. However, at the start
+     of any battle involving a demon-type enemy, it pulses — revealing which
+     column the highest-threat enemy occupies before initiative is rolled.
+
+(4★) Demons assault the shop while the party is browsing. The battlefield is
+     the shop interior — all characters begin in Column 3 (Farthest Back) and
+     must advance. Cover objects grant Guard stance passively for turn 1 only.
+     Surviving the assault lets the party loot 3x Iron Ore and 2x Wolf Pelt
+     free of charge.
+
+================================================================================
+MYSTERY & INVESTIGATION
+================================================================================
+
+(3★) Ruins in the area bear strange symbols that match one PC's birthmark
+     exactly. [INT check] A Mage or Elementalist who passes identifies it as
+     an arcane seal — the PC's Mana Shield capacity is doubled for the next
+     battle, but they also begin that battle with the Vulnerable status as the
+     seal flares.
+
+(4★) An ancient library contains records of the party's "heroic" deeds — and
+     earlier, far darker ones. One PC loses their turn 1 action in the next
+     combat (Stagger, as the revelation hits them mid-battle). [FTH check]
+     A Cleric using Miracle can stabilize the PC and negate this penalty.
+
+(3★) A captured demon laughs and calls a PC by a name they don't recognize.
+     That PC's aggro weight is treated as maximum (40 + position modifier) for
+     the rest of this combat node, as if they were a frontline Warrior.
+
+(5★) A memory crystal activates and shows the party's original Archdemon forms
+     destroying a capital. Every PC begins the next combat with 1 Fallen Stack
+     already applied (-25% damage dealt, -25% healing received). A Bard of
+     Valor using Heroic Symphony before the battle can negate one Fallen Stack
+     per affected PC.
+
+(4★) A traitor inside the Alliance has been feeding intel to the demons. The
+     next combat node's enemy formation is revealed in advance — but the trap
+     is that the enemies also know the party's formation. Enemies will
+     pre-target whichever PC has the lowest DEF at battle start.
+
+(3★) Every villager in a small town shares the same nightmare about the party.
+     [CHA check] A Bard performing Soothing Lute for the villagers calms them.
+     On fail, the party rests here but receives no HP from the Feast (the
+     disturbed atmosphere prevents proper rest).
+
+(2★) A stone prophecy tablet is found with lines that contradict the official
+     Alliance history. One line mentions a specific class by name. The PC of
+     that class gains +1 free Talent Point, but the tablet crumbles before
+     more can be read.
+
+(5★) The party discovers their own demonic armor and weapons, preserved in a
+     sealed vault. Each piece of equipment is a perfect upgrade of whatever
+     that PC currently wears (+15 to all scaling stats). Equipping the items
+     applies a permanent Burn DoT (value 5) each battle that cannot be
+     cleansed — until a key story event occurs.
+
+(4★) A captured Archdemon recognizes the party as "siblings" and offers to
+     reveal the next chapter's elite enemy formations — if one PC willingly
+     takes a Fallen Stack as proof of trust. [CHA check] A Bard PC can bluff
+     the information out without taking the stack.
+
+(3★) Historical records show timeline discrepancies that imply the party
+     existed before the official founding of the Alliance. [INT check] A Mage
+     or Elementalist who passes gains a clue item. On fail, an archivist
+     alerted by the party's questions sends guards — a 2★ combat encounter
+     triggers.
+
+================================================================================
+SIDE QUESTS & PERSONAL ARCS
+================================================================================
+
+(2★) A farmer needs help clearing undead from his land. The undead are immune
+     to Bleed and Poison. Clerics and High Priests deal +30% damage to these
+     enemies via holy scaling. Completing the quest rewards 2x Ancient Bone.
+
+(3★) Retrieve a sacred relic from a haunted temple. The dungeon node counts
+     as two consecutive combat encounters with no campground between them.
+     The relic itself functions as a Charm slot item: +20 FTH and +1 EN
+     regeneration per battle.
+
+(4★) Escort a merchant caravan through demon-infested territory across three
+     consecutive combat nodes. After each node, one random PC loses 10% max HP
+     (exhaustion) unless a Cleric uses Regenerate on them. Completing all
+     three nodes without a PC reaching 0 HP rewards a Talisman of Power recipe
+     unlock (crafted for half the usual materials).
+
+(3★) Crops near old battlefields are failing — void crystals are leeching
+     nutrients. The combat here involves Elemental spirits (see encounter
+     above). Cleansing all void crystals (Purify used 3 times in combat)
+     rewards 3x Magic Bloom and a +5 FTH bonus to any Cleric in the party.
+
+(2★) Deliver medicine to a plague-stricken town. No combat, but the party
+     must not use any healing potions or Feast HP recovery for the journey —
+     the medicine must arrive intact. On success, the town's healer teaches
+     one Cleric or High Priest PC the Blessed Aura talent node for free.
+
+(4★) A rogue demon keeps calling one PC "master" and refuses to fight back.
+     The party must decide: finish it (combat encounter, enemy has 0 aggro and
+     never attacks), spare it (it joins as a passive camp NPC who identifies
+     one void-cursed item per chapter), or interrogate it (grants 5★ lore
+     clues but triggers a 3★ demon ambush immediately after).
+
+(5★) One PC's "false memory family" is found — actually villagers from a town
+     the party destroyed in a past life. They recognize the PC. That PC begins
+     the next combat with Vulnerable (+50% damage taken) and Crippled (-25%
+     damage dealt) as guilt manifests. The only cure is a Bard using Grand
+     Finale to emotionally resolve the scene.
+
+(3★) A tournament in the capital celebrates the heroes. PCs enter 1v1 duels
+     in the 3x3 arena. Win three consecutive duels to earn a rare weapon (the
+     Gilded Broadsword or Longbow of Gales, winner's choice). Losses give the
+     PC a Fallen Stack (tournament rules — no death, but exhaustion counts).
+
+(4★) A town votes to execute suspected demon collaborators who are actually
+     innocent. [CHA check] A Bard of Valor using Heroic Symphony can sway the
+     crowd. On fail, the party must intervene in combat — fighting town guards
+     who Taunt the highest-STR PC immediately. Saving the innocents rewards
+     a Phoenix Feather crafting material.
+
+(5★) During combat, one PC begins having flashbacks. At the start of their
+     turn each round, roll a chance (50%) that they act on instinct — using
+     their highest-damage skill against a random target (ally or enemy). A
+     Cleric using Purify or a Bard using Rallying Chorus on that PC ends the
+     flashback state.
+
+================================================================================
+MAJOR PLOT PROGRESSION EVENTS
+================================================================================
+
+(3★) First meeting with Alliance leaders. [CHA check] A Bard or Bard of Valor
+     PC who passes unlocks a passive Alliance Blessing: +10 to all party DEF
+     for the current chapter. On fail, the Alliance assigns a distrustful
+     officer who reduces the party's camp Feast HP recovery to 20% instead
+     of 30%.
+
+(4★) The party acquires the first Holy Relic. It occupies the Charm slot and
+     grants +25 FTH to the holder. Holy damage skills used by any PC in the
+     party gain +15% potency while the relic is carried.
+
+(4★) Assault on a demon outpost. The outpost has a fortified Column 1 row of
+     enemies, all in Guard stance at battle start. AoE skills (Fireball,
+     Discordant Wail, Titan's Wrath) are especially effective here. Clearing
+     the outpost drops 4x Iron Ore and 3x Ancient Bone.
+
+(5★) Confrontation with a minor Demon Lord serving Valthorak. This boss applies
+     a party-wide Vulnerable debuff on turn 1. All damage-reduction effects
+     (Guard, Block, Mana Shield) still apply on top of Vulnerable. Surviving
+     turn 1 without a KO awards a bonus loot drop.
+
+(4★) Discovery of Zorath the Soulforger's hidden laboratory. Scattered notes
+     function as free Talent Point unlocks — one per PC (can be applied to any
+     node they could legally reach). The lab also contains 2x Magic Bloom and
+     an Archmage Scepter blueprint.
+
+(5★) The rival hero party returns — now twisted demonic versions of themselves.
+     They have all the same skills as before, plus each one applies Burn (value
+     10) on hit. Bards of Chaos using Hexing Chord can reduce their ATK by 30%,
+     making survival much more manageable.
+
+(5★) Full memory restoration event — one PC recalls the truth first. For the
+     remainder of this chapter, that PC's damage is increased by 20% (clarity
+     and fury combined), but they start every battle with 1 Fallen Stack as
+     the weight of memory takes its toll.
+
+(5★) Alliance forces turn against the party after evidence surfaces. The party
+     faces three back-to-back combat nodes with no campground. Fallen Stacks
+     carry over. A PC with 3 Fallen Stacks risks permanent death if they reach
+     0 HP in any of these nodes.
+
+(5★) Valthorak offers a direct audience — and offers to reveal the full truth
+     if the party switches sides. Choosing to listen grants the party a free
+     chapter skip (skip to next chapter's first node) but applies 1 Fallen
+     Stack to every PC from the psychic strain of his presence.
+
+(5★) Final choice: continue serving Zorath, betray him, or attempt redemption.
+     Each path alters chapter 4's lane count and enemy difficulty. Betraying
+     Zorath reduces lane count to 8 (easier) but triggers an immediate 5★
+     boss encounter as his constructs attack. Redemption path keeps 10 lanes
+     but unlocks a unique Talent node for all PCs: "Soul's Reckoning."
+
+================================================================================
+HIGH DIFFICULTY / SPECIAL EVENTS (4–5★)
+================================================================================
+
+(4★) A void storm blankets the map node. Divine magic is suppressed — all FTH
+     scaling is halved and Cleric/High Priest skills cost +1 EN to activate.
+     The storm lifts after 3 turns of combat. Mage and Rogue PCs are unaffected.
+
+(5★) Battle inside a collapsing pocket dimension. Each turn, one random grid
+     cell (ally or enemy side) is destroyed. Characters standing on a destroyed
+     cell are forced to Column 3. Warriors and Knights who cannot legally stand
+     on Column 3 are instead Staggered for 1 turn when displaced.
+
+(4★) The party fights shadow clones of their past demonic selves. Each clone
+     mirrors the corresponding PC's current stats exactly — including Fallen
+     Stacks, equipped gear, and active talent nodes. The only advantage: clones
+     cannot use Bard support skills on each other.
+
+(5★) Moral event: a powerful artifact can level a city in exchange for enough
+     void energy to defeat Valthorak in one hit. Choosing to use it eliminates
+     the final boss's HP threshold mechanic — but every PC gains 2 Fallen
+     Stacks permanently and one PC's talent tree is wiped entirely.
+
+(4★) A trusted NPC companion betrays the party. They enter the battlefield on
+     the enemy side — with full knowledge of the party's grid positioning,
+     talent trees, and aggro weights. They specifically target whoever has the
+     most Fallen Stacks.
+
+(5★) The party's demonic forms begin manifesting involuntarily. At the start of
+     each battle, each PC has a 25% chance to begin in a Berserk state:
+     +50% damage dealt, but they target randomly (ally or enemy). A Cleric
+     using Purify on a Berserk PC restores their control immediately.
+
+(4★) Siege of a major surviving city. The party defends across two consecutive
+     3★ combats and one 4★ elite combat. After each combat, one PC is randomly
+     assigned to "wall duty" and starts the next battle in Column 3 regardless
+     of preference. Warriors and Knights displaced this way are Staggered turn 1.
+
+(5★) Zorath appears in a vision at the campground and speaks the party's true
+     names. Each PC's highest talent tree node is temporarily unlocked for the
+     next battle for free — even if they haven't purchased the prerequisite
+     nodes. After the battle, the nodes revert.
+
+(4★) Hunt for Zorath's experimental notes across a dungeon node. Three
+     consecutive combats, each dropping one page. Collecting all three pages
+     unlocks a new crafting recipe: Steel Aegis at half material cost.
+
+(5★) Climactic battle against Valthorak while fighting internal corruption.
+     Every 2 turns, one random PC enters Berserk (see above). Valthorak
+     himself targets whichever PC has the lowest current HP each turn, ignoring
+     Taunt entirely. Fallen Stacks accumulated here carry into the ending
+     cutscene — affecting which ending variant is displayed.
+
+================================================================================
+MISCELLANEOUS / FILLER EVENTS
+================================================================================
+
+(2★) Festival celebrating the heroes. The party enters a free Feast phase.
+     A Bard PC who performs here (any Bard skill used narratively) grants the
+     party a 3-turn Regen buff (value 6) going into the next combat — "the
+     crowd's cheers still ringing in their ears."
+
+(1★) A peaceful fishing village offers fresh food. Full Feast recovery (30%
+     max HP), plus each PC may equip one free Charm-slot item: a Lucky Fish
+     Lure (+10 LCK, 1 battle only).
+
+(3★) A bridge is guarded by a riddle-obsessed demon. [INT check] Any Mage or
+     Elementalist PC auto-passes and the demon lets the party cross. On fail,
+     combat begins — the demon occupies Column 1 alone and uses Guard stance,
+     immune to Bleed and Poison.
+
+(2★) A wandering merchant with a cart of oddities sells random Charm and Ring
+     slot items at discount. One item in stock is always void-cursed (applies
+     Burn value 3 per battle) but gives the highest stat bonus. [LCK check]
+     A Rogue PC can identify the cursed item before purchasing.
+
+(3★) An abandoned mine is full of void crystals. Mining them (safe, no combat)
+     yields 2x Magic Bloom equivalent in raw void material — usable as a
+     Magic Bloom substitute in any recipe. However, all PCs take Burn (value 4)
+     at the start of the next combat from lingering void exposure.
+
+(4★) The party is entered into a colosseum fight against captured demons.
+     Three rounds, each against one demon type (standard, elite, champion).
+     The colosseum crowd cheers for the party — a Bard PC passively generates
+     a Valor Anthem (+25% ATK) effect for free in round 1 from the energy.
+
+(2★) A library contains forbidden tomes on void magic. [INT check] A Mage or
+     Elementalist who spends a full rest here gains a permanent +5 INT bonus.
+     On fail (or any other class trying), the PC is Vulnerable at the start of
+     the next battle from arcane overload.
+
+(3★) An escaped experimental subject — clearly one of Zorath's creations —
+     begs for mercy. Sparing it yields a free Phoenix Feather. Attacking it
+     triggers combat: the creature has no aggro weight and will not attack
+     back, but it has very high HP and must be defeated to continue.
+
+(1★) A small chapel offers healing. A Cleric or High Priest PC who prays here
+     has their Resurrection or Miracle talent CD reset to 0 before the next
+     battle. Other PCs receive a standard 20 HP flat heal.
+
+(4★) A treacherous mountain pass is laced with demonic ambushes in two
+     consecutive combat nodes. Visibility is poor — all party members' Accuracy
+     is reduced by -20% for both battles. Archers and Rogues with DEX 55+
+     are immune to this penalty.
+
+(2★) A bard composes an epic song about the party's deeds, but the lyrics
+     contain uncomfortable references to their darker past. A Bard of Chaos PC
+     who hears it is briefly Staggered (turn 1 of next combat) from recognition.
+     All other PCs receive +5 CHA for the next two battles from the flattery.
+
+(3★) A shared dream sequence visits all PCs simultaneously during a campground
+     rest. Show each PC a vision of their demonic past. All PCs start the next
+     battle with +15% damage (rage) but also Vulnerable (+50% damage taken,
+     turn 1 only) as the dream lingers.
+
+(4★) A fight breaks out in a city square as civilians watch in horror. The
+     party must defeat enemies without letting any civilian cell (a designated
+     neutral grid cell) take AoE damage. Mage and Bard of Chaos AoE skills
+     risk hitting civilian cells — use them carefully or rely on single-target
+     classes. Success yields +20 gold and a reputation bonus.
+
+(5★) The Alliance's greatest champion challenges the party to single combat
+     against their strongest PC. This is a 1v1 on a 1x3 mini-grid. The
+     champion mirrors the chosen PC's highest attribute and has 200% of that
+     PC's max HP. Winning grants a Legendary weapon for that PC's class slot.
+
+(3★) A corrupted holy artifact is discovered. It burns demonic flesh — which
+     means it deals Burn (value 15) per turn to any PC who equips it. The
+     damage cannot be reduced by DEF or Block. However, it also grants +30 FTH
+     while held. A Cleric with Purify (3 uses in combat) can cleanse it into a
+     normal, powerful holy relic.
+
+(2★) A village elder tells old legends that directly contradict the official
+     Alliance history. The party gains a lore clue. [CHA check] A Bard who
+     successfully charms the elder into sharing more details unlocks an extra
+     story node on the map, replacing one combat node.
+
+(4★) A portal to a demonic realm opens accidentally during a campground rest.
+     The party is pulled through and must fight in an inverted battlefield —
+     enemy and ally columns are swapped. Warriors and Knights who land on Column
+     3 (their restricted zone) are Staggered for turn 1. Surviving closes the
+     portal and rewards 2x Ancient Bone.
+
+(5★) The party must decide whether to destroy or use Zorath's soul-forging
+     machine. Using it: every PC gains +2 permanent TP but also permanently
+     gains a Burn DoT (value 8) that activates in each battle and cannot be
+     cleansed. Destroying it: no TP gain, but a hidden chapter 4 lane is
+     unlocked and all Fallen Stacks on all PCs are cleared.
+
+(3★) A group of paladins joins the party temporarily for two combat nodes.
+     Each paladin functions as a bonus Cleric NPC (FTH 35, Minor Heal each
+     turn). However, they grow suspicious — if any PC uses a void-related
+     item or Burn-applying skill, the paladins abandon the party at the start
+     of the next node.
+
+(5★) Final revelation scene where all truths collide before the ultimate choice.
+     Every PC's Fallen Stacks are revealed to the Alliance simultaneously.
+     PCs with 0 Fallen Stacks gain the "Redeemed" passive (+20% ATK and DEF
+     for the final battle). PCs with 2+ Fallen Stacks begin the final battle
+     already in Berserk state, targeting randomly — and the entire party must
+     survive the chaos before they can face Valthorak.
+
+================================================================================

@@ -1,0 +1,186 @@
+================================================================================
+                    VOID SOUL / AN AVERAGE CAMPAIGN
+                 CLASSES, SKILLS, TALENTS, & RACES GUIDE
+================================================================================
+
+This guide serves as a complete reference for character building, class archetypes,
+active skill unlocks, talent trees, and character races in An Average Campaign.
+
+================================================================================
+1. BASE GUILD CLASSES & CLASS GROWTH
+================================================================================
+Characters choose their core role when entering the campaign, determining their 
+starting attribute scores, weapon types, and growth coefficients when leveling up.
+
+- Warrior
+  * Focus: Melee physical attacker/tank. Weapon: Sword.
+  * Start Stats: STR: 12, DEX: 6, CON: 14, INT: 4, FTH: 4, CHA: 4, LCK: 6
+  * Growth per Level: STR +1.5, CON +1.5, LCK +0.5
+  * Limit: Cannot stand on Column 3 (Farthest back) due to range limits.
+
+- Archer
+  * Focus: Ranged physical/crit attacker. Weapon: Bow.
+  * Start Stats: STR: 8, DEX: 14, CON: 8, INT: 6, FTH: 4, CHA: 5, LCK: 7
+  * Growth per Level: DEX +1.5, STR +1.0, LCK +0.5
+
+- Mage
+  * Focus: Magical spells and area-of-effect damage. Weapon: Staff.
+  * Start Stats: STR: 4, DEX: 8, CON: 6, INT: 15, FTH: 5, CHA: 6, LCK: 6
+  * Growth per Level: INT +2.0, CHA +0.5, LCK +0.5
+
+- Cleric
+  * Focus: Healing, shielding, and holy damage. Weapon: Tome.
+  * Start Stats: STR: 6, DEX: 6, CON: 10, INT: 5, FTH: 14, CHA: 7, LCK: 4
+  * Growth per Level: FTH +1.5, CON +1.0, INT +0.5
+
+- Rogue
+  * Focus: High crit melee, poisons, and quick strikes. Weapon: Dagger.
+  * Start Stats: STR: 6, DEX: 13, CON: 7, INT: 4, FTH: 4, CHA: 5, LCK: 13
+  * Growth per Level: DEX +1.5, LCK +1.5
+
+- Bard
+  * Focus: Buffing, support songs, and status effects. Weapon: Lute.
+  * Start Stats: STR: 5, DEX: 9, CON: 7, INT: 7, FTH: 8, CHA: 14, LCK: 12
+  * Growth per Level: CHA +1.5, LCK +1.0, FTH +0.5
+
+================================================================================
+2. ADVANCED CLASS ARCHETYPES (LEVEL 10+)
+================================================================================
+At Level 10, characters unlock advanced paths expanding their capabilities:
+
+- Warrior Advanced Paths:
+  * Berserker: Aggressive melee damage dealer wielding dual swords.
+  * Knight: Ultra-tanky defender with high base defense, utilizing shields.
+- Archer Advanced Paths:
+  * Sharpshooter: Extremely long-range high crit marksman.
+  * Bolt Slinger: Rapid fire, debuffing archer.
+- Mage Advanced Paths:
+  * Elementalist: High-power multi-element destruction mage.
+  * Summoner: Casts protective energy barrier and summons minor elementals.
+- Cleric Advanced Paths:
+  * High Priest: Supercharged party-wide healing and restoration.
+  * Inquisitor: Hybrid holy-damage frontline knight.
+- Rogue Advanced Paths:
+  * Assassin: Lethal single-target damage dealer specializing in poisons and fatal strikes.
+  * Duelist: Highly evasive double-strike counter-attacker.
+- Bard Advanced Paths:
+  * Bard of Valor: Inspiring combat commander adding defensive shields to songs.
+  * Bard of Chaos: Unpredictable support chord caster applying Burn to all enemies.
+
+================================================================================
+3. ACTIVE SKILLS UNLOCK LEVEL MATRIX
+================================================================================
+All active skills unlock automatically as character level increases, rather than 
+requiring manual talent purchases:
+
+--------------------------------------------------------------------------------
+A. GENERAL SKILLS (All Classes, Unlocked at Level 1)
+--------------------------------------------------------------------------------
+- Strike (0 Energy | CD: 0 | Single Target): Deals basic physical/magical weapon attack.
+- Guard (0 Energy | CD: 0 | Self): Cuts incoming damage in half, doubles block chance.
+
+--------------------------------------------------------------------------------
+B. BASE CLASS ACTIVE SKILLS
+--------------------------------------------------------------------------------
+* Warrior:
+  - Level 1: [Shield Strike] (0 Energy | Single Target) deals 1.5x physical damage.
+  - Level 3: [Iron Wall] (1 Energy | Self) grants CON-based damage shield.
+  - Level 5: [Challenger's Cry] (1 Energy | Single Target) taunts target, drawing aggro.
+* Archer:
+  - Level 1: [Quick Shot] (0 Energy | Single Target) fires arrow scaling DEX + STR.
+  - Level 3: [Rain of Arrows] (1 Energy | Column) fires arrows hitting a whole column.
+  - Level 5: [Eagle Eye] (1 Energy | Self) increases accuracy and crit chance.
+* Mage:
+  - Level 1: [Firebolt] (0 Energy | Single Target) deals magical damage + Burn DoT.
+  - Level 3: [Thunder Storm] (1 Energy | All Enemies) deals thunder damage to all.
+  - Level 5: [Mana Flow] (1 Energy | Self) recovers +2 Energy points.
+* Cleric:
+  - Level 1: [Holy Grace] (0 Energy | Single Ally) heals based on FTH.
+  - Level 3: [Protection Shelter] (1 Energy | All Allies) shield absorbing dmg.
+  - Level 5: [Smite] (1 Energy | Single Enemy) deals FTH-based holy spell damage.
+* Rogue:
+  - Level 1: [Stab] (0 Energy | Single Target) deals dagger damage with +15% crit chance.
+  - Level 3: [Death Venom] (1 Energy | Single Target) physical hit + Poison DoT.
+  - Level 5: [Smoke Bomb] (1 Energy | Self) increases dodge chance and initiative.
+* Bard:
+  - Level 1: [Melodic Tune] (0 Energy | Single Ally) buffs ally stats/atk.
+  - Level 3: [Discordant Song] (1 Energy | Single Enemy) debuffs and staggers target.
+  - Level 5: [Siren Song] (1 Energy | All Allies) heals and shields the entire party.
+
+--------------------------------------------------------------------------------
+C. ADVANCED CLASS ACTIVE SKILLS (Unlocked at Level 15 & 18)
+--------------------------------------------------------------------------------
+* Berserker: Lv 15 [Rampage], Lv 18 [Execute]
+* Knight: Lv 15 [Shield Wall], Lv 18 [Last Stand]
+* Sharpshooter: Lv 15 [Snipe], Lv 18 [Deadeye]
+* Bolt Slinger: Lv 15 [Bolt Volley], Lv 18 [Crippling Shot]
+* Elementalist: Lv 15 [Meteor Strike], Lv 18 [Elemental Nova]
+* Summoner: Lv 15 [Summon Golem], Lv 18 [Barrier Ward]
+* High Priest: Lv 15 [Divine Word], Lv 18 [Resurrection Grace]
+* Inquisitor: Lv 15 [Holy Wrath], Lv 18 [Judgment]
+* Assassin: Lv 15 [Shadowstrike], Lv 18 [Assassinate]
+* Duelist: Lv 15 [Riposte Stance], Lv 18 [Double Tap]
+* Bard of Valor: Lv 15 [Heroic Ballad], Lv 18 [Commanding Shout]
+* Bard of Chaos: Lv 15 [Discordant Wail], Lv 18 [Hexing Chord]
+
+================================================================================
+4. TALENT TREES SYSTEM & DYNAMIC COST
+================================================================================
+Talent points are used during campgrounds or preparation phases to unlock passive 
+bonuses or skill amplification effects.
+
+- Point Pools: Talent Points (TP) and unlocked talent nodes are tracked separately for each class archetype. Swapping your active class in the lobby immediately swaps your talent configuration and unspent TP pool. Refunding talents correctly restores the spent points back into that class's TP pool.
+- Node 1 (Iron Skin / Eagle Eye / Spark / Minor Heal / Nimble / Ballad): Free/Default (0 TP).
+- Dynamic Node Costs: The purchase cost of any talent node scales dynamically:
+  `Cost = Base Cost + number of already unlocked non-free nodes in that class`
+  Base Cost is 0 TP for Node 1, 2 TP for Node 10 (Ultimate), and 1 TP for all other nodes. Therefore, each subsequent unlock in a class increases the TP cost of remaining nodes in that class by +1.
+
+================================================================================
+5. CHARACTER RACE SYSTEMS
+================================================================================
+Select a starting Race during lobby customization. Each race offers unique tactical traits, passive team synergies, or significant trade-offs:
+
+1. Human
+   - Advantage: +1 Stat Point to use when leveling up (+4 Stat Points total per level, instead of 3).
+   - Disadvantage: None.
+2. Elf
+   - Advantage: Crit Chance & Crit Damage +20% flat. 50% chance to double material drops from combat.
+   - Disadvantage: Takes x2 damage from Poison status effect.
+3. Dwarves
+   - Advantage: +10% health (final calculation multiplier). Every 10 levels, crafted items gain +10% stats (integer floored).
+   - Disadvantage: None.
+4. Dragonborn
+   - Advantage: +10% Strength. Defense increased by +20% or +8 flat (whichever is higher).
+   - Disadvantage: Takes x2 damage from Bleed status effect.
+5. Goblin
+   - Advantage: +25% Gold gains (party benefit, does not stack). +1 Initiative roll.
+   - Disadvantage: None.
+6. Vampire
+   - Advantage: Lifesteal: heals 20% of damage dealt from all attacks and counters.
+   - Disadvantage: -20% final stats reduction (applied to core attributes).
+7. Succubus
+   - Advantage: +25% Charisma. Reduces narrative event stat check thresholds by 20% flat (party benefit, does not stack).
+   - Disadvantage: -20% Max HP. Takes x2 damage from Burn status effect.
+8. Dryad
+   - Advantage: +20% outgoing healing. Team gains +10% EXP gained (party benefit, does not stack).
+   - Disadvantage: Takes x2 damage from Burn status effect.
+
+================================================================================
+6. REBALANCED DAMAGE & HEALING SCALING
+================================================================================
+To balance late-game scaling, active skill calculations utilize flat values and linear stat scaling:
+- Warrior Damage:   (12 + STR * 1.2 + CON * 0.6) * damageMultiplier
+- Archer Damage:    (10 + DEX * 1.2 + STR * 0.5) * damageMultiplier
+- Mage Damage:      (10 + INT * 1.5) * damageMultiplier
+- Cleric Damage:    (10 + FTH * 1.4) * damageMultiplier
+- Rogue Damage:     (10 + DEX * 1.1 + LCK * 0.8) * damageMultiplier
+- Bard Damage:      (10 + CHA * 1.0 + LCK * 0.5) * damageMultiplier
+- Cleric Healing (Single Target): (10 + FTH * 1.0) * healingMultiplier
+- Cleric Healing (All Allies):    (8 + FTH * 0.8) * healingMultiplier
+- Cleric Shield (Shelter):        10 + FTH * 1.0
+- Bard Regen (Soothing Lute):     5 + CHA * 0.4 per turn (ticks and heals actively in combat)
+- High Priest Regen (Aura of Hope): 10 + FTH * 0.8 per turn
+
+AOE and Column penalties are applied to base damage values (90% for ALL_ENEMIES, 80% for COLUMN).
+
+================================================================================

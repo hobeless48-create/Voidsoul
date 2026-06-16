@@ -1,0 +1,87 @@
+=== TYPE DEFINITIONS REFERENCE (types.ts) ===
+
+[ENUMS]
+TargetType: SINGLE_ENEMY | ALL_ENEMIES | SINGLE_ALLY | ALL_ALLIES | SELF | COLUMN | MULTI_HIT
+
+[CORE TYPE: Character]
+id: string
+name: string
+class: CharacterClass (ClassName | AdvancedClassName | Tier3ClassName)
+level: number (1-100)
+xp: number
+hp: number / maxHp: number
+energy: number / maxEnergy: number (default maxEnergy=7)
+stats: { STR, DEX, CON, INT, FTH, CHA, LCK }
+allocatedPoints: number (points spent on stat upgrades)
+unspentPoints: number (level-1 * raceFactor - allocatedPoints)
+equipment: { weapon, offhand, helmet, chestplate, leggings, boots, ring, bracelet, necklace, charm }
+gridX: number (column 1=front, 3=back)
+gridY: number (row 1-3)
+statusEffects: StatusEffect[]
+isSummon?: boolean
+avatarUrl?: string
+skillCooldowns?: Record<string, number>
+fallenStacks?: number (0-3, 4th = permanent death)
+talentPoints?: number
+unlockedTalents?: string[]
+race?: "Human"|"Elf"|"Dwarves"|"Dragonborn"|"Goblin"|"Vampire"|"Succubus"|"Dryad"
+talentPointsByClass?: Record<string, number>
+unlockedTalentsByClass?: Record<string, string[]>
+inventory?: Item[]
+runStartLevel?: number
+password?: string
+subclass?: string (T3 subclass choice)
+tier5Acknowledged?: boolean
+
+[CORE TYPE: Enemy]
+id: string
+name: string
+maxHp: number / hp: number
+atk: number / def: number
+critChance: number / dodgeChance: number / accuracy?: number
+avatarUrl?: string
+gridX: number / gridY: number
+statusEffects: StatusEffect[]
+aiType: "attacker"|"spellcaster"|"tank"|"boss"
+xpAwarded: number / goldAwarded: number
+dropMaterials?: string[]
+skillCooldowns?: Record<string, number>
+
+[CORE TYPE: Item]
+id: string
+name: string
+type: "weapon"|"offhand"|"helmet"|"chestplate"|"leggings"|"boots"|"ring"|"bracelet"|"necklace"|"charm"|"material"|"consumable"
+flatAtk? / flatMaxHp? / flatCrit? / flatDodge? / flatDef? / flatAccuracy?: number
+weaponType?: "sword"|"bow"|"staff"|"tome"|"dagger"|"lute"|"shield"
+statsBonus?: Partial<Stats>
+description: string
+value: number
+quantity?: number
+ownerId?: string
+isTwoHanded?: boolean
+rarity?: "Common"|"Uncommon"|"Rare"|"Epic"|"Legendary"
+
+[CLASSES LIST]
+Base (6): Warrior, Archer, Mage, Cleric, Rogue, Bard
+Advanced (12): Berserker, Knight, Sharpshooter, Bolt Slinger, Elementalist, Summoner, High Priest, Inquisitor, Assassin, Duelist, Bard of Valor, Bard of Chaos
+Tier3 (12): Warlord, Paladin, Hawkeye, Storm Dancer, Archmage, Void Caller, Seraph, Crusader, Phantom, Blade Saint, Herald of Glory, Entropy Singer
+
+[SKILL STRUCTURE]
+Skill: id, name, description, cost(energy), targetType, damageMultiplier?, healingMultiplier?, effect?, effectValue?, effectDuration?, cooldown?, levelReq?
+
+[STATUS EFFECT TYPES]
+"burn"|"poison"|"bleed"|"regen"|"taunt"|"shield"|"multiplier"|"stagger"|"dodge_up"|"guarding"|"stun"|"crippled"|"vulnerable"|"shield_wall"
+Each: { type, value: number, duration: number }
+
+[CHOICE EFFECT (for events)]
+type: "item"|"gold"|"hp"|"hp_pct"|"xp"|"stat_check"|"random"|"talent_point"|"status"|"combat"|"none"
+Can be nested: successEffect, failEffect, randomEffects[]
+
+[COMBAT LOG]
+{ id, text, type: "info"|"damage"|"heal"|"status"|"system", timestamp }
+
+[CRAFTING RECIPE]
+{ id, name, ingredients: [{itemId, quantity}], resultItemId }
+
+[TALENT NODE]
+{ id, name, description, cost, statsBonus?, flatMaxHp?, flatDef?, flatCrit?, flatDodge?, skillUpgrade?, parents?, isPassive? }

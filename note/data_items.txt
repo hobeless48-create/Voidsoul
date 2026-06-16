@@ -1,0 +1,75 @@
+=== ITEM / MATERIAL / CRAFTING DATA (items_db.ts) ===
+
+[ITEM STRUCTURE]
+interface Item {
+  id: string;              // Unique item ID
+  name: string;            // Display name
+  type: "weapon"|"offhand"|"helmet"|"chestplate"|"leggings"|"boots"|"ring"|"bracelet"|"necklace"|"charm"|"material"|"consumable";
+  flatAtk?: number;        // Flat ATK bonus
+  flatMaxHp?: number;      // Flat HP bonus
+  flatCrit?: number;       // +X% crit chance
+  flatDodge?: number;      // +X% dodge
+  flatDef?: number;        // Flat DEF bonus
+  flatAccuracy?: number;   // +X% accuracy
+  weaponType?: "sword"|"bow"|"staff"|"tome"|"dagger"|"lute"|"shield";
+  statsBonus?: Partial<Stats>; // STR,DEX,CON,INT,FTH,CHA,LCK bonuses
+  description: string;     // Flavor text with special effects
+  value: number;           // Buy/sell price
+  quantity?: number;       // Stack count
+  ownerId?: string;        // P2P owner tracking
+  isTwoHanded?: boolean;   // Uses both weapon + offhand slots
+  rarity?: "Common"|"Uncommon"|"Rare"|"Epic"|"Legendary";
+}
+
+[MATERIALS LIST - 16 total]
+Used as drops and crafting ingredients. All defined as ITEMS_DATABASE entries with type "material".
+
+id                  name                  value  dropped in areas
+iron_ore            Iron Ore              10     Forest, Cave, Trail, City, Dungeon, Trading
+wolf_pelt           Wolf Pelt             10     Forest, Trail, Trading, Frontline
+magic_bloom         Magic Bloom           15     Forest, Cave, Trail, Trading, Lab, Sky
+ancient_bone        Ancient Bone          15     Forest, Cave, Trail, Lich Castle, Dungeon, Citadel, Lab
+voidstone_fragment  Voidstone Fragment    20     Void, Lich Castle, Lab, Horizon
+demon_blood_vial    Demon Blood Vial       20     Frontline, Horizon, City, Trading
+soul_thread         Soul Thread           30     Lich Castle, Void, Citadel, Sky, Horizon
+blessed_silk        Blessed Silk          20     Citadel, Trading, Forest (boss)
+glacial_shard       Glacial Shard         20     Sky, Dungeon, Lab
+shadow_silk         Shadow Silk           20     Void, Citadel, City, Lab, Horizon
+ember_core          Ember Core            25     Frontline, Horizon, City
+chimera_feather     Chimera Feather       25     Sky, Citadel, Forest (boss)
+moonsilk_thread     Moonsilk Thread       25     Forest, Cave, Trail, Citadel, Sky
+toxin_gland         Toxin Gland           20     Forest, Cave, Trail, Lab, Trading
+void_residue        Void Residue          30     Void, Lich Castle, Lab, Horizon, Dungeon
+volcanic_ash        Volcanic Ash          15     Frontline
+
+[CRAFTING RECIPES - CRAFTING_RECIPES array]
+Each recipe: { id, name, ingredients: [{itemId, quantity}], resultItemId }
+
+Weapons (18 recipes):
+- Basic: iron_sword(3iron+1pelt), composite_bow(2pelt+1iron), apprentice_staff(2bloom+1iron), holy_tome(1bloom+2bone), bronze_dagger(2iron+1pelt), willow_lute(2pelt+1bloom)
+- Advanced: gilded_broadsword(6iron+3bone), warblade_of_the_fallen(6iron+2voidstone+2bone), berserkers_cleaver(4iron+3demon), knights_honour_blade(4iron+1silk)
+- Bows: longbow_of_gale(5pelt+3bloom), sharpshooters_sighted_bow(4pelt+2feather), twin_bolt_crossbows(3iron+3pelt+1residue)
+- Staves: archmage_scepter(6bloom+2bone), inferno_rod(3bloom+3ash), frostweave_wand(2bloom+2shard), summoners_binding_orb(4bloom+2soul)
+- Tomes: tome_of_divine_wrath(4bone+3silk+1soul)
+- Swords: inquisitors_flamebrand(3iron+2bone+2ember)
+- Daggers: assassins_fang(3iron+3toxin+2silk), duelists_rapier(3iron+2pelt+1moonsilk)
+- Lutes: grand_chaos_lyre(3pelt+2residue+2bloom), valor_horn(3iron+2silk+1feather)
+
+Offhands (5 recipes):
+- iron_shield(3iron+1pelt), steel_aegis(6iron+2bone), void_tempered_bulwark(6iron+3voidstone+2bone), clerics_holy_buckler(2iron+2silk), spellbreaker_ward(3bloom+2shard)
+
+Helmets (4+ recipes): iron_helm(3iron), berserkers_horned_crown(4iron+2demon), mages_arcane_cowl(2bloom+1moonsilk), etc.
+
+Chestplates, Leggings, Boots, Rings, Bracelets, Necklaces, Charms - all have crafting recipes using appropriate materials.
+
+[CONSUMABLES]
+- Healing: minor_heal(75hp), major_heal(150hp), regeneration_elixir, greater_healing_draught
+- Energy: energy_brew(+2EN), mana_crystal(+3EN)
+- Combat items: poison_vial, stun_grenade, burn_powder, freeze_crystal, shock_orb
+- Stat potions: strength_potion, dexterity_potion, etc.
+- Special: phoenix_feather(revive), void_crystal_shard, blessed_oil, smoke_bomb, etc.
+
+[SHOP GENERATION in MapEventList.tsx]
+- Regular pool: ~30 common consumables
+- Special pool: ~35 rare+ items (cursed_blade_of_vareth, stormreaver_longbow, etc.)
+- Random selection for each shop visit

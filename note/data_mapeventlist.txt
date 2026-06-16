@@ -1,0 +1,54 @@
+=== MAP EVENT LIST DATA (MapEventList.tsx) ===
+
+[COMPONENT] MapEventList - The 3-choice node selection screen
+
+[PROPS]
+chapter, area, maxArea, way, path, availableNodes: MapNode[]
+onSelectNode, gold, inventory, party, p2pMode
+activeStoryIndex, activeShopOpen, votes, countdown
+castVote, executeStoryChoice, myPlayerId
+
+[CHAPTER THEME SYSTEM] getChapterTheme(chapter, way, path)
+Dynamic theme based on chapter_way_path key:
+- borderColor, bgColor, glowColor, name, description, emoji
+
+Key mapping:
+  "1" = Forest (emerald)
+  "2_1" = Cave (stone), "2_2" = Dungeon (red)
+  "3_1" = Trail (amber), "3_2" = Trading City (yellow)
+  "4_1_1" = Lich Castle (purple), "4_1_2" = Peaceful City (rose)
+  "4_2_1" = Sky Island (cyan), "4_2_2" = Frontline (orange)
+  "5_1_1" = Void (indigo), "5_1_2" = White Citadel (sky)
+  "5_2_1" = Lab (lime), "5_2_2" = Horizon Castle (violet)
+
+[MapNode INTERFACE]
+{ type: "combat" | "elite_combat" | "event" | "shop" | "rest" | "boss",
+  stars: number, label: string }
+
+[NODE DISPLAY]
+- 3 choice buttons shown to player
+- In P2P: Show vote buttons instead for non-host, show countdown
+- Host resolves vote: majority wins, countdown 5 seconds
+- Event nodes: triggers MYSTERY_STORIES display
+- Shop nodes: triggers shop panel (generateShopWares)
+
+[SHOP SYSTEM]
+- generateShopWares(): picks random items from regular + special pools
+- Regular ~30 items (consumables, materials)
+- Special ~35 items (rare legendary/epic gear)
+- buyerId = myPlayerId in multiplayer, party[0] in solo
+
+[STORY RESOLUTION] executeStoryChoice(storyIdx, choiceIdx)
+Called from App.tsx - resolves ChoiceEffect chain
+- Supports nested effects: successEffect/failEffect for stat_checks
+- Battle trigger: spawnEnemyGroup with stars >= 4 for elite
+
+[VOTING SYSTEM]
+- votes: Record<string, string> mapping playerId → choiceId
+- majority threshold = ceil(party.length / 2)
+- 5 second countdown after threshold reached
+- Host resolves: "node_" prefix = map node, "story_" prefix = event choice
+
+[INVENTORY / GOLD CALLBACKS]
+- onUpdateInventory, onUpdateGold, onUpdateParty
+- Used for shop purchases and event rewards

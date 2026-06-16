@@ -1,0 +1,6 @@
+{
+  "name": "An Average Campaign",
+  "description": "A tactical turn-based medieval P2P multiplayer RPG with 3x3 strategic positioning, deep class advancements, and crafting systems.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,109 @@
+=== VOID SOUL - FULL SYSTEM OVERVIEW ===
+
+====================================
+1. PROJECT STRUCTURE
+====================================
+src/
+  App.tsx              - Main game loop, state management, progression
+  types.ts             - All TypeScript interfaces
+  enemies_db.ts        - Enemy templates, boss definitions, spawn logic
+  events_db.ts         - Mystery events with choice effects
+  items_db.ts          - Item database, crafting recipes, materials
+  skills_db.ts         - Character skills, derived stats, gear calculations
+  talents_db.ts        - Talent tree definitions
+  components/
+    BattleScene.tsx     - Turn-based combat engine
+    MapEventList.tsx    - Map node selection, shop, event resolution
+    CampingMenu.tsx     - Rest/camp between battles
+    ClassAdvancement.tsx - Class promotion UI
+    ProfileView.tsx     - Character creation/selection lobby
+    BroadcastLobby.tsx  - Lobby component (not extensively used)
+  utils/
+    sync.ts            - P2P sync Bridge (BroadcastChannel-based)
+
+====================================
+2. GAME FLOW
+====================================
+LOBBY → MAP → BATTLE → CAMP → MAP → ... → VICTORY
+                   ↓                          ↑
+              GAMEOVER ← (party wipe)         │
+                                              │
+PATH_CHOICE (Ch1→Ch2, Ch3→Ch4) ───────────────┘
+
+====================================
+3. CORE DATA TYPES (types.ts)
+====================================
+Character: id, name, class, level, stats, equipment, statusEffects, 
+           gridX/Y, skillCooldowns, fallenStacks, talentPoints, 
+           unlockedTalents, race, inventory, subclass
+
+Enemy: id, name, maxHp, hp, atk, def, critChance, dodgeChance, 
+       accuracy, gridX/Y, statusEffects, aiType, xpAwarded, 
+       goldAwarded, dropMaterials
+
+Item: id, name, type, flatAtk/Def/Hp/Crit/Dodge/Accuracy, 
+      statsBonus, weaponType, description, value, rarity, quantity
+
+Skill: id, name, description, cost, targetType, damageMultiplier,
+       healingMultiplier, effect, effectValue, effectDuration, cooldown
+
+Stats: STR, DEX, CON, INT, FTH, CHA, LCK (each 1-99 range)
+
+StatusEffect: { type, value, duration } - ticked each turn
+
+====================================
+4. KEY SYSTEMS REFERENCE
+====================================
+
+COMBAT:
+- Files: BattleScene.tsx, skills_db.ts
+- Turn order by initiative roll
+- 3x3 grid positioning for both sides
+- Dodge capped at 30%
+- Bosses have special phase mechanics
+- Victory when all enemies slain; defeat when all players down
+- Fallen stack system: 3 falls = permanent death in run
+- P2P sync via broadcastCombatState()
+
+PROGRESSION:
+- Files: App.tsx, enemies_db.ts
+- Forest(Ch1) → Branch(Ch2-5) with way/path choices
+- Each chapter = 5 areas (8 for Forest)
+- Boss kill → next chapter + talent point + full heal
+- Class promotions at level 15, 30, 50, 75
+
+ENEMIES:
+- Files: enemies_db.ts
+- 5 enemy types per area pool
+- 13 bosses total (1 per chapter area)
+- Spawn with scaling HP/ATK based on area depth
+
+EVENTS:
+- Files: events_db.ts, App.tsx(resolveEffect)
+- 70+ events across all areas
+- 3-choice roll per map node (unless pre-boss)
+- stat_check system: highest party stat vs threshold
+- Effects: item, gold, HP, XP, talent_point, status, combat
+
+ITEMS & CRAFTING:
+- Files: items_db.ts
+- 7 weapon types, 4 armor types, 4 accessory types, 16 materials
+- 70+ crafting recipes
+- Materials dropped by specific enemy pools
+
+CLASSES:
+- 6 base classes: Warrior, Archer, Mage, Cleric, Rogue, Bard
+- 12 advanced classes (2 per base)
+- 12 tier-3 classes (2 per base)
+- Talent trees per base class
+
+====================================
+5. IMPORTANT BEHAVIOR NOTES
+====================================
+- Ryu Jin boss: Phase 2 at 90% HP (Sky Dragon's Wrath AoE), Phase 3 at 50% (Temporal Storm single target)
+- Lucifer (Ch5): Defeat still triggers VICTORY phase
+- Dodge is hard-capped at 30% in BattleScene.getUnitDodge()
+- All boss fights have pre-boss rest event
+- Duplicate events cannot appear in same 3-choice roll
+- Forest has 8 lanes; all other chapters have 5
+- P2P: host handles all enemy AI, non-hosts only control their turn actions

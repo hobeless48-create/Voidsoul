@@ -1,0 +1,28 @@
+{
+  "id": "player_u0wvub0r3",
+  "username": "Garest1",
+  "password": "koopp00123",
+  "level": 9,
+  "xp": 2,
+  "gold": 34,
+  "talentPoints": 2,
+  "unlockedTalents": [
+    "rog_t3_cloak",
+    "rog_t5_evasive"
+  ],
+  "talentPointsByClass": {
+    "Warrior": 0,
+    "Rogue": 2
+  },
+  "unlockedTalentsByClass": {
+    "Warrior": [],
+    "Rogue": [
+      "rog_t3_cloak",
+      "rog_t5_evasive"
+    ]
+  },
+  "race": "Elf",
+  "avatarUrl": "https://opengameart.org/sites/default/files/rogue.svg",
+  "class": "Rogue",
+  "inventory": []
+}

@@ -1,0 +1,12 @@
+{
+  "name": "void-soul-server",
+  "private": true,
+  "version": "1.0.0",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "ws": "^8.21.0"
+  }
+}

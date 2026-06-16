@@ -1,0 +1,72 @@
+=== ENEMY SYSTEM DATA (enemies_db.ts) ===
+
+[ENEMY TEMPLATE STRUCTURE]
+interface EnemyTemplate {
+  name: string;           // Display name
+  maxHp: number;          // Base max HP
+  atk: number;            // Base attack
+  def: number;            // Base defense
+  critChance: number;     // Critical hit % (e.g. 12 = 12%)
+  dodgeChance: number;    // Dodge % (max 30 via BattleScene.getUnitDodge)
+  accuracy: number;       // Base accuracy (95-110 range)
+  avatarUrl: string;      // Image URL
+  aiType: "attacker" | "spellcaster" | "tank" | "boss";
+  xpAwarded: number;      // XP reward
+  goldAwarded: number;    // Gold reward
+  dropMaterials: string[]; // Array of material IDs dropped on kill
+}
+
+[ENEMY POOLS - Each area has 5 enemy types]
+Key: chapter_way_path
+
+Ch1: The Forest (always accessible)
+  FOREST_ENEMIES - 6 enemies: Timberwolf, Mandrake, Tortoise, Spider, Fungus, Goblin Scout
+
+Way 1 path:
+  Ch2: CAVE_ENEMIES (Skeleton Miner, Cave Goblin, Sporeling, Stone Elemental, Bat Swarm)
+  Ch3: TRAIL_ENEMIES (Goblin Raider, Goblin Archer, Goblin Shaman, Dire Wolf, Trap Goblin)
+  Ch4 path1: LICH_CASTLE_ENEMIES (Skeleton Warrior, Crypt Ghoul, Wraith Specter, Bone Archer, Necromancer Acolyte)
+  Ch4 path2: CITY_ENEMIES (Greedy Villager, Illusion Thief, Hoarder Construct, Merchant Assassin, Golden Golem)
+  Ch5 path1: VOID_ENEMIES (Voidling Spawn, Rift Wraith, Shadow Amalgam, Anomaly Tendril, Corrupted Echo)
+  Ch5 path2: CITADEL_ENEMIES (Fallen Angel Scout, Corrupted Seraph, Winged Betrayer, Divine Deserter, Shadowed Herald)
+
+Way 2 path:
+  Ch2: DUNGEON_ENEMIES (Crypt Ghoul, Skeleton Archer, Grave Sentry, Stone Gargoyle, Bone Amalgamation)
+  Ch3: TRADING_ENEMIES (Evil Adventurer, Rogue Rival, Mercenary Mage, Corrupt Cleric, Bandit Leader)
+  Ch4 path1: SKY_ENEMIES (Sky Harpy, Storm Bird, Aerial Serpent, Cloud Elemental, Feathered Scout)
+  Ch4 path2: FRONTLINE_ENEMIES (Demon Knight, Hellhound, Void Imp, Succubus Lure, Armored Fiend)
+  Ch5 path1: LAB_ENEMIES (Acidic Slime, Gelatinous Ooze, Toxic Blob, Crystal Slime, Swarm Slime)
+  Ch5 path2: HORIZON_ENEMIES (Demon Knight Elite, Demon General, Shadow Fiend, Infernal Mage, Blood Lord)
+
+[BOSSES - CHAPTER_BOSSES Record<string, BossEntry>]
+Boss key = "chapter_way_path" (e.g. "4_2_1" = Ch4 Way2 Path1)
+
+Key         Name                    MaxHP  ATK  DEF  Drops
+"1_0_0"     Ancient Timber-Giant    950    65   30   ancient_bone, blessed_silk, chimera_feather
+"2_1_0"     Ore Eater               1400   85   40   iron_ore, ancient_bone, ember_core
+"3_1_0"     Goblin General          1600   95   35   iron_ore, wolf_pelt, chimera_feather
+"4_1_1"     Lich Archmage           2000  130   30   soul_thread, voidstone_fragment, blessed_silk
+"5_1_1"     Slaad, Void Entity      2800  150   45   voidstone_fragment, void_residue, soul_thread
+"4_1_2"     Sin of Greed            2200  120   38   iron_ore, demon_blood_vial, ember_core
+"5_1_2"     Sin of Pride - Lucifer  3500  175   50   soul_thread, blessed_silk, chimera_feather
+"2_2_0"     Death Knight            1700  110   25   ancient_bone, voidstone_fragment, demon_blood_vial
+"3_2_0"     Greedeus                1800  115   35   iron_ore, demon_blood_vial, wolf_pelt
+"4_2_1"     Ryu Jin, Sky Dragon     2400  125   40   chimera_feather, glacial_shard, soul_thread
+"5_2_1"     Azelf, Mad Scientist    2600  140   35   toxin_gland, void_residue, voidstone_fragment
+"4_2_2"     Demon King Bael         2800  145   42   demon_blood_vial, ember_core, soul_thread
+"5_2_2"     Demon Lord Verath       3200  165   48   demon_blood_vial, voidstone_fragment, soul_thread
+
+[SPAWN FUNCTION] spawnEnemyGroup(chapter, area, isElite, isBoss, nodeLabel, way, path)
+- Normal fight: 1-3 enemies (scales with area)
+- Elite fight: 3 enemies with 1.4x stat multiplier
+- Boss fight: single boss from CHAPTER_BOSSES
+- hpMultiplier: scales from 0.6 to 1.0 across chapter areas
+- progressionScaler: increases stats with area depth
+
+[HELPER FUNCTIONS]
+getMaxAreaForChapter(chapter, way, path) - Returns max lanes
+  Ch1=8, Ch2-5=5 each
+getChapterDisplayName(chapter, way, path) - Returns name string
+getChapterEmoji(chapter, way, path) - Returns emoji
+getChapterDescription(chapter, way, path) - Returns lore/flavor text
+getChapterBackgroundUrl(chapter, way, path) - Returns bg image URL

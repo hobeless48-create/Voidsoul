@@ -1,0 +1,79 @@
+=== BATTLE SYSTEM DATA (BattleScene.tsx) ===
+
+[BATTLE SCENE COMPONENT]
+Props: party, enemies, onVictory, onDefeat, p2pMode, roomId, myPlayerId, chapter, area
+
+[COMBAT STATE]
+- combatParty: Character[] - Party with gridX sorted 1-N
+- combatEnemies: Enemy[] - Enemy array
+- round: number - Current round counter
+- initiativeOrder: string[] - ID list sorted by initiative rolls
+- currentTurnIdx: number - Index into initiativeOrder
+- combatLogs: CombatLog[] - Action log
+- battleState: "ongoing" | "victory" | "defeat"
+- selectedAction: "fight" | "items" | "focus" | null
+- selectedSkill: Skill | null
+
+[INITIATIVE SYSTEM]
+- rollAllInitiatives() called at battle start
+- Players: roll between minInit and maxInit (derived stats), +3 for support classes, +5 with Bard Inspire, +1 Goblin
+- Enemies: roll between 0-10
+- Sorted descending; initiativeOrder persisted for full battle
+
+[DODGE SYSTEM] (getUnitDodge)
+- Players: getDerivedStats().dodgeChance + dodge_up buff
+- Enemies: base dodgeChance + dodge_up buff
+- CAP: Math.min(30, finalDodge) - MAXIMUM 30% dodge
+
+[HIT CHANCE]
+hitChance = Math.max(5, Math.min(100, attackerAcc - targetDodge))
+
+[ENEMY AI] (executeEnemyAI)
+Runs on host only (p2pMode === "solo" || myPlayerId === party[0].id)
+
+1. Tick status effects (burn/poison/bleed damage, regen heal)
+2. Check stun/stagger skip (skip turn)
+3. Determine target (taunt > aggro weights > random)
+4. If aiType === "boss" -> Boss AI (see below)
+5. Else:
+   - "spellcaster" enemies: 40% special attack, 60% basic
+   - "attacker" enemies: prioritize low-aggro targets
+   - "tank" enemies: 30% chance to apply taunt to themselves
+6. resolvePhysicalHit() handles damage calculation
+
+[BOSS AI]
+Special phase mechanics per boss:
+1. Enrage at 30% HP: 1.5x ATK multiplier
+2. Ryu Jin - Sky Dragon:
+   - Phase 2 (90% HP): "Sky Dragon's Wrath" - AoE + daze all
+   - Phase 3 (50% HP): "Temporal Storm" - massive single target + stagger
+   - Regular: "Dragon's Claw" special, or Storm Whelp summon
+3. Lucifer: "Pride's Fall" special, Fallen Ember summon
+4. Slaad: "Void Rend" special, Void Shard summon
+5. Verath: "Demon's Bite" special, Demon Imp summon
+6. Summon minion (25% chance, max 3 enemies) for all bosses
+7. Special attack (35% chance) or basic attack fallback
+
+[PLAYER ACTIONS]
+- Fight → select skill → target enemy: castSkillOnTarget(caster, skill, targetId)
+- Focus → handleFocus(charger): +2 Energy, shield 15+CON*2
+- Items → handleUsePotion(charger, itemId): use consumable
+- AdvanceTurn called after every action
+
+[VICTORY CONDITIONS]
+aliveEnemies.length === 0 → victory (all enemies slain)
+  - Fallen stack system: 3 falls = permanent death in current run
+  - Rewards: gold + materials from enemy drops
+
+[DEFEAT CONDITIONS]
+alivePlayers.length === 0 → defeat
+  - Chapter 5+ defeat → still triggers VICTORY phase (Lucifer/ending fix)
+
+[STATUS EFFECTS SYSTEM]
+Types: burn, poison, bleed, regen, taunt, shield, multiplier, stagger, dodge_up, guarding, stun, crippled, vulnerable, shield_wall
+Each: { type, value, duration } - ticked down at start of each entity's turn
+
+[SYNC SYSTEM (P2P)]
+- SYNC_COMBAT_ACTION broadcasts: party, enemies, round, initiativeOrder, currentTurnIdx, logs, battleState
+- Non-host players receive updates via syncBridge
+- Auto-turn timer for enemies: 1200ms delay

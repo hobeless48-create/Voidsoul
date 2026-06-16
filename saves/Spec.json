@@ -1,0 +1,22 @@
+{
+  "id": "player_6lt0ru3gu",
+  "username": "Spec",
+  "password": "1",
+  "level": 5,
+  "xp": 2,
+  "gold": 34,
+  "talentPoints": 1,
+  "unlockedTalents": [],
+  "talentPointsByClass": {
+    "Warrior": 0,
+    "Bard": 1
+  },
+  "unlockedTalentsByClass": {
+    "Warrior": [],
+    "Bard": []
+  },
+  "race": "Human",
+  "avatarUrl": "https://ih1.redbubble.net/image.1023214784.7024/bg,f8f8f8-flat,750x,075,f-pad,750x1000,f8f8f8.jpg",
+  "class": "Bard",
+  "inventory": []
+}

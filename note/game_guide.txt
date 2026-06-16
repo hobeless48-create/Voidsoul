@@ -1,0 +1,594 @@
+================================================================================
+                    VOID SOUL / AN AVERAGE CAMPAIGN
+                     OFFICIAL GAME SYSTEMS REFERENCE
+================================================================================
+
+[!!! MANDATORY DEVELOPMENT RULE !!!]
+Whenever ANY modifications are made to classes, stats, scaling, formulas, skills, 
+talents, items, or gameplay mechanics in the codebase, this reference file 
+(game_guide.txt) MUST be updated immediately. This ensures that this document 
+remains a 100% accurate, single source of truth for design, balancing, and 
+subsequent AI/human development.
+
+================================================================================
+1. GAMEPLAY FLOW & GAME LOOP
+================================================================================
+The game plays in distinct phases centered around party building, exploration,
+and tactical turn-based combat.
+
+- Tavern Lobby / Dashboard: The main hub where the player configures their character,
+  loads/creates profiles, selects guild classes, manages talent points (TP), and 
+  customizes their starting party (up to 4 heroes).
+- Map Node Selection: The party moves lane by lane through 4 chapters: Chapter 1 Forest (8 lanes), Chapter 2 Dungeon Catacombs (12 lanes), Chapter 3 Volcanic Peak (10 lanes), and Chapter 4 Void Catacombs (10 lanes). In each lane, players choose between combat, elite combat, narrative story events (choices testing stats), campgrounds, or merchants.
+- Battle Scene: Turn-based tactical combat on a 3x3 grid (for allies) facing a 3x3 grid of enemies.
+- Camping / Feast: Rest phase after successful battles to heal the party (restores 30% of max HP), craft gear, buy/sell items, or deposit gold into the shared stash. The main menu widget is expanded by 20% to prevent scroll overflow. Recipes in the blacksmith forge are hidden until at least 1 unit of any ingredient in the recipe is gathered in the inventory.
+- Victory / Defeat: Defeating the final boss of Chapter 4 completes the campaign.
+  If all characters drop to 0 HP, defeat is encountered. Fallen characters gain 
+  "Fallen Stacks" (up to 3 max; 4th stack results in permanent death).
+
+================================================================================
+2. SYSTEM STATS & FORMULAS
+================================================================================
+
+---------------------------
+A. CORE ATTRIBUTES
+---------------------------
+- STR (Strength): Boosts physical damage, critical damage, and block chance.
+- DEX (Dexterity): Boosts ranged scaling, accuracy, initiative, dodge, and crit chance.
+- CON (Constitution): Main health attribute. Boosts defense, block chance, and block reduction.
+- INT (Intelligence): Boosts magical spell damage and mana shield capacities.
+- FTH (Faith): Boosts holy damage and healing multipliers.
+- CHA (Charisma): Boosts support scaling, song effectiveness, and buff durations.
+- LCK (Luck): Increases critical strike chance, dodge chance, and status effect triggers.
+
+---------------------------
+B. CLASS DAMAGE & HEALING SCALING FORMULAS
+---------------------------
+Active skill output uses a balanced flat + scale formula based on the character's base class and stats, then scales by the skill's damage/healing multiplier:
+- Warrior:  Base = (12 + STR * 1.2 + CON * 0.6) * damageMultiplier
+- Archer:   Base = (10 + DEX * 1.2 + STR * 0.5) * damageMultiplier
+- Mage:     Base = (10 + INT * 1.5) * damageMultiplier
+- Cleric (Damage): Base = (10 + FTH * 1.4) * damageMultiplier
+- Rogue:    Base = (10 + DEX * 1.1 + LCK * 0.8) * damageMultiplier
+- Bard (Damage): Base = (10 + CHA * 1.0 + LCK * 0.5) * damageMultiplier
+- Cleric (Healing):
+  * Single Ally: Healing = (10 + FTH * 1.0) * healingMultiplier
+  * All Allies: Healing = (8 + FTH * 0.8) * healingMultiplier
+- Cleric (Shield): Shelter Shield = 10 + FTH * 1.0
+- Bard (Regen): Soothing Lute Regen = 5 + CHA * 0.4 per turn
+- High Priest (Regen): Aura of Hope Regen = 10 + FTH * 0.8 per turn
+
+AOE and Column penalties are applied to base damage values (90% for ALL_ENEMIES, 80% for COLUMN).
+
+---------------------------
+C. DERIVED STATS FORMULAS
+---------------------------
+At any point, character stats are calculated as:
+- Max HP:          80 + (CON * 12) + ((Level - 1) * 15) + [Flat HP Bonuses]
+- Crit Chance:     Min(80%, 5% + (DEX * 0.4) + (LCK * 0.5) + [Flat Crit Bonuses])
+- Crit Damage:     150% + (STR * 0.8) + (DEX * 0.6) + (LCK * 1.2) + [Flat Crit Dmg Bonuses]
+- Dodge Chance:    Min(75%, 3% + (DEX * 0.5) + (LCK * 0.3) + [Flat Dodge Bonuses])
+- Block Chance:    Min(75%, 4% + (STR * 0.5) + (CON * 0.4))
+- Block Reduction: Min(85%, 15% + (CON * 0.8))
+- Min Initiative:  2 + Level + Math.floor(DEX / 3)
+- Max Initiative:  10 + Level + Math.floor(DEX / 2)
+- Accuracy:        95% + (DEX * 1) + (LCK * 0.5) + [Flat Accuracy Bonuses]
+- Total Defense:   [Base Class Def] + (CON * 1) + [Flat Def Bonuses]
+
+Base Defense by Class:
+- Warrior / Inquisitor: 12
+- Knight: 20
+- Berserker / Sharpshooter / Duelist: 8
+- Cleric / Bolt Slinger / Bard of Chaos / Assassin: 6
+- Mage: 3
+- Elementalist: 5
+- Summoner / Rogue / Bard: 4
+- High Priest / Bard of Valor: 10
+
+================================================================================
+3. COMBAT SYSTEMS
+================================================================================
+
+---------------------------
+A. INITATIVE & TURN ORDER
+---------------------------
+At the start of battle, every participant rolls an Initiative value:
+- Players roll: Random between Min Initiative and Max Initiative. Support classes 
+  (Cleric, High Priest, Inquisitor, Bard, Bard of Valor, Bard of Chaos) receive +3.
+- Enemies roll: Random between 0 and 10.
+Participants are placed in descending order of rolled initiative.
+
+---------------------------
+B. GRID POSITIONING
+---------------------------
+- The battlefield features a 3x3 player grid (columns X, rows Y) and a 3x3 enemy grid.
+- Column X: 1 = Frontline, 2 = Midline, 3 = Farthest Back.
+- Row Y: 1 = Top, 2 = Center, 3 = Bottom.
+- CONSTRAINT: Warrior classes (Warrior, Knight, Berserker) CANNOT stand on Column 3 
+  due to melee attack range limits.
+
+---------------------------
+C. AGGRO SHARE / ENEMY TARGETING
+---------------------------
+If not taunted, enemies target player characters using weighted aggro probabilities:
+- Base Aggro Weight: Warrior/Knight/Berserker = 40, Cleric/Priest/Inquisitor/Bard = 25, others = 20.
+- Position Modifier: Characters standing on the frontline (Column 1) have their aggro 
+  multiplied by 1.2.
+
+---------------------------
+D. DEFENSE, BLOCK, AND SHIELD MECHANICS
+---------------------------
+When a unit takes damage:
+1. Target Def decreases the raw incoming damage flatly (Damage = Damage - Def, minimum 1).
+2. If Block rolls successfully (using Block Chance), damage is reduced by Block Reduction.
+3. If the target has a Shield buff, the shield absorbs incoming damage first.
+4. Active "Guard" stance cuts incoming damage in half, and doubles Block Chance.
+5. Fallen Stack penalty: Each Fallen Stack reduces damage dealt by 25% and reduces 
+   healing/shielding received by 25%.
+
+---------------------------
+E. STATUS EFFECTS
+---------------------------
+- Burn: Deals damage equal to effect value at the start of the unit's turn.
+- Poison: Deals damage equal to effect value at the start of the unit's turn.
+- Bleed: Deals damage equal to effect value at the start of the unit's turn.
+- Regen: Restores health equal to effect value.
+- Taunt: Forces target to attack the taunter.
+- Shield: Absorbs a flat amount of incoming damage.
+- Stagger / Stun: Skips the unit's turn.
+- Vulnerable: Target takes +50% damage.
+- Crippled: Target deals -25% damage.
+
+================================================================================
+4. CLASSES AND SKILLS
+================================================================================
+Active skills for each class unlock naturally as the character levels up, rather than 
+through the talent tree.
+- Base class active skills unlock at level 1 (1st skill), level 3 (2nd skill), and level 5 (3rd skill).
+- Advanced class active skills unlock at level 15 (1st skill) and level 18 (2nd skill).
+
+--------------------------------------------------------------------------------
+A. WARRIOR BRANCH
+--------------------------------------------------------------------------------
+* Base Class: Warrior
+  - Shield Strike (Cost: 0 EN | CD: 0 | Target: Single Enemy): Deals 1.5x damage. Scales on STR.
+  - Iron Wall (Cost: 1 EN | CD: 2 | Target: Self): Shield value 30. Duration 2 turns.
+  - Challenger's Cry (Cost: 1 EN | CD: 3 | Target: Single Enemy): Taunts for 3 turns.
+
+* Advanced Class: Berserker
+  - Frenzy Slash (Cost: 2 EN | CD: 3 | Target: Single Enemy): Deals 2.8x damage. 40% lifesteal. Scales on STR.
+  - Bloodlust Strike (Cost: 1 EN | CD: 2 | Target: Single Enemy): Sacrifice 15 HP, deal 3.2x damage, apply Bleed (20 value, 3 turns).
+
+* Advanced Class: Knight
+  - Aegis Shielding (Cost: 2 EN | CD: 3 | Target: All Allies): Column shield value 60. Duration 3 turns.
+  - Guardian Slash (Cost: 2 EN | CD: 2 | Target: Single Enemy): Deals 1.8x damage, taunts all column enemies for 3 turns.
+
+--------------------------------------------------------------------------------
+B. ARCHER BRANCH
+--------------------------------------------------------------------------------
+* Base Class: Archer
+  - Quick Shot (Cost: 0 EN | CD: 0 | Target: Single Enemy): Deals 1.3x damage. Scales on DEX and STR.
+  - Rain of Arrows (Cost: 2 EN | CD: 2 | Target: Column): Deals 0.9x damage to a column.
+  - Eagle Eye (Cost: 1 EN | CD: 3 | Target: Self): Crit multiplier +15%. Duration 3 turns.
+
+* Advanced Class: Sharpshooter
+  - Sniper Precision (Cost: 3 EN | CD: 4 | Target: Single Enemy): Execution damage 4.5x. Scales on DEX.
+  - Deadeye Focus (Cost: 1 EN | CD: 2 | Target: Self): +50% Crit multiplier and ignores Dodge next turn.
+
+* Advanced Class: Bolt Slinger
+  - Triple Strike (Cost: 2 EN | CD: 2 | Target: Multi-Hit): Hits 3 distinct targets. Deals 1.1x per hit. Scales on DEX.
+  - Split Shot Aura (Cost: 2 EN | CD: 3 | Target: Self): Basic attacks strike the entire column. Duration 3 turns.
+
+--------------------------------------------------------------------------------
+C. MAGE BRANCH
+--------------------------------------------------------------------------------
+* Base Class: Mage
+  - Firebolt (Cost: 0 EN | CD: 0 | Target: Single Enemy): Deals 1.4x damage, Burn DoT (8 value, 3 turns).
+  - Thunder Storm (Cost: 3 EN | CD: 3 | Target: All Enemies): Deals 1.8x AoE damage. Scales on INT.
+  - Mana Flow (Cost: 1 EN | CD: 2 | Target: Self): Gain +2 Energy. Regen value 5. Duration 2 turns.
+
+* Advanced Class: Elementalist
+  - Inferno Blast (Cost: 2 EN | CD: 3 | Target: All Enemies): Deals 2.2x AoE damage, Burn DoT (18 value, 3 turns).
+  - Frost Nova (Cost: 2 EN | CD: 3 | Target: All Enemies): Deals 1.5x AoE damage, Stagger (2 duration, 1 turn delay).
+
+* Advanced Class: Summoner
+  - Summon Familiar (Cost: 2 EN | CD: 3 | Target: Self): Summons a pet to an empty slot on the grid.
+  - Empower Pack (Cost: 1 EN | CD: 2 | Target: All Allies): +30% attack strength and heals summons. Duration 3 turns.
+
+--------------------------------------------------------------------------------
+D. CLERIC BRANCH
+--------------------------------------------------------------------------------
+* Base Class: Cleric
+  - Holy Grace (Cost: 1 EN | CD: 2 | Target: Single Ally): Restores 2.0x healing. Scales on FTH.
+  - Protection Shelter (Cost: 2 EN | CD: 3 | Target: All Allies): Shield value 20. Duration 3 turns.
+  - Smite (Cost: 1 EN | CD: 0 | Target: Single Enemy): Deals 1.6x holy damage. Scales on FTH.
+
+* Advanced Class: High Priest
+  - Divine Sanctuary (Cost: 3 EN | CD: 4 | Target: All Allies): Restores 3.5x healing and cleanses all debuffs.
+  - Aura of Hope (Cost: 2 EN | CD: 3 | Target: All Allies): Healing regen value 20. Duration 4 turns.
+
+* Advanced Class: Inquisitor
+  - Holy Retribution (Cost: 2 EN | CD: 3 | Target: Single Enemy): Deals 2.6x damage. Distributed back to party as heal shares.
+  - Zealot Seal (Cost: 1 EN | CD: 2 | Target: Single Enemy): Deals 1.4x damage, reduces target DEF by 30% (Stagger status).
+
+--------------------------------------------------------------------------------
+E. ROGUE BRANCH
+--------------------------------------------------------------------------------
+* Base Class: Rogue
+  - Stab (Cost: 0 EN | CD: 0 | Target: Single Enemy): Deals 1.4x damage. Scales on DEX.
+  - Bleed Strike (Cost: 1 EN | CD: 1 | Target: Single Enemy): Deals 1.1x damage, Bleed DoT (12 value, 3 turns).
+  - Shadow Step (Cost: 1 EN | CD: 3 | Target: Self): Evasion +30%. Duration 2 turns.
+
+* Advanced Class: Assassin
+  - Death Venom (Cost: 2 EN | CD: 3 | Target: Single Enemy): Deals 2.2x damage, Poison DoT (25 value, 3 turns) and Bleed.
+  - Exterminate (Cost: 2 EN | CD: 2 | Target: Single Enemy): Deals 3.0x damage. Triple damage if target has Bleed/Poison.
+
+* Advanced Class: Duelist
+  - Riposte Aura (Cost: 2 EN | CD: 3 | Target: Self): Evasion +35%. Counter-attacks on successful dodges. Duration 3 turns.
+  - Flashing Blades (Cost: 1 EN | CD: 2 | Target: Single Enemy): Swift double-strikes. Deals 2.0x damage. Scales on DEX.
+
+--------------------------------------------------------------------------------
+F. BARD BRANCH
+--------------------------------------------------------------------------------
+* Base Class: Bard
+  - Valor Anthem (Cost: 1 EN | CD: 3 | Target: All Allies): Buffs party damage by +25%. Duration 3 turns.
+  - Dissonance (Cost: 1 EN | CD: 0 | Target: Single Enemy): Deals 1.2x damage, Staggers target.
+  - Soothing Lute (Cost: 2 EN | CD: 3 | Target: All Allies): Regen value 8. Duration 3 turns. Scales on CHA.
+
+* Advanced Class: Bard of Valor
+  - Heroic Symphony (Cost: 3 EN | CD: 3 | Target: All Allies): Buffs party damage by +40% and heals instantly. Duration 3 turns.
+  - Aegis Song (Cost: 2 EN | CD: 3 | Target: All Allies): Grants 35 value shield, +20% Block and +20% Dodge. Duration 3 turns.
+
+* Advanced Class: Bard of Chaos
+  - Discordant Wail (Cost: 2 EN | CD: 3 | Target: All Enemies): Deals 1.8x magic damage, Burn DoT (15 value, 3 turns).
+  - Hexing Chord (Cost: 1 EN | CD: 2 | Target: Single Enemy): Deals 1.3x damage, reduces target ATK by 30% and Staggers.
+
+================================================================================
+5. TALENT TREES SYSTEM
+================================================================================
+Players earn permanent Talent Points (TP) by leveling up (starting with 3 TP at Level 1, gaining +1 TP per level up). Each base class features a visual coordinate tree grid containing 10 customizable nodes.
+
+- Point Pools: Talent Points (TP) and unlocked talent nodes are tracked separately for each class archetype. Swapping your active class in the lobby immediately swaps your talent configuration and unspent TP pool. Refunding talents correctly restores the spent points back into that class's TP pool.
+- Node 1 (Iron Skin / Eagle Eye / Spark / Minor Heal / Nimble / Ballad): Free/Default (0 TP).
+- Dynamic Node Costs: The purchase cost of any talent node scales dynamically:
+  `Cost = Base Cost + number of already unlocked non-free nodes in that class`
+  Base Cost is 0 TP for Node 1, 2 TP for Node 10 (Ultimate), and 1 TP for all other nodes. Therefore, each subsequent unlock in a class increases the TP cost of remaining nodes in that class by +1.
+- Unlocking rule: A node can be purchased if you have sufficient TP and at least one parent node is already unlocked.
+- All talent nodes are passives that grant flat stats, attribute bonuses, or amplify active skills and combat performance.
+
+* Warrior Tree:
+  - Iron Skin (war_t1_iron_skin): Unlocked by default (0 TP). Permanent +15 DEF.
+  - Shield Strike Mastery (war_t2_power_strike): Shield Strike deals +20% damage and has +10% Critical Strike chance. Gains +5 STR.
+  - Fortified Bulwark (war_t3_shield_wall): Iron Wall shield absorption is increased by 25%. Gains +5 CON.
+  - Challenger's Aura (war_t4_taunt): Challenger's Cry taunt duration is increased by 1 turn and taunted enemies suffer an extra -10% ATK penalty.
+  - Juggernaut Step (war_t5_juggernaut): Warrior cannot be repositioned or knocked back. Permanent +10% Max HP.
+  - Vanguard Focus (war_t6_warcry): Permanent +10 STR and +10 CON.
+  - Indomitable Will (war_t7_endure): When below 35% HP, Warrior gains 30% flat damage reduction. Gains +5 CON.
+  - Heavy Strikes (war_t8_blade_fury): Shield Strike has a 30% chance to Stun the target for 1 turn. Gains +8 STR.
+  - Defensive Stance (war_t9_fortress): Permanent +20 DEF and +10% Block Chance.
+  - Titan's Legacy (war_t10_titans_wrath): Whenever Warrior successfully blocks or dodges an attack, deal 25% STR physical damage back to the attacker.
+
+* Archer Tree:
+  - Eagle Eye Mastery (arc_t1_eagle_eye): Unlocked by default (0 TP). Permanent +10% Accuracy and +5% Critical Strike chance.
+  - Quick Shot Mastery (arc_t2_quick_shot): Quick Shot deals +20% damage and gains +15% Accuracy. Gains +5 DEX.
+  - Viper's Sting (arc_t3_pinning): Quick Shot has a 40% chance to apply Poison DoT (scales on DEX). Gains +5 LCK.
+  - Heavy Draw (arc_t4_power_draw): Rain of Arrows deals +25% damage. Gains +5 STR.
+  - Deadeye Focus (arc_t5_fan_arrows): Eagle Eye grants +10% Crit Chance and +25% Crit Damage. Gains +5 DEX.
+  - Guerilla Training (arc_t6_shadow_step): Permanent +10 DEX and +10 LCK.
+  - Hunter's Mark (arc_t7_crippling): Archer deals +15% damage to targets that are currently poisoned or bleeding.
+  - Piercing Volley (arc_t8_barrage): Rain of Arrows ignores 25% of target's DEF. Gains +8 DEX.
+  - Hawk's Instinct (arc_t9_focus): Permanent +15% Dodge Chance.
+  - Grand Execution (arc_t10_deadeye): Archer critical hits have a 50% chance to reduce target's DEF by 30% for 2 turns.
+
+* Mage Tree:
+  - Arcane Focus (mag_t1_spark): Unlocked by default (0 TP). Permanent +10 INT.
+  - Firebolt Mastery (mag_t2_flame_dart): Firebolt deals +20% damage and Burn DoT deals 15% more damage. Gains +5 INT.
+  - Storm Herald (mag_t3_frost_nova): Thunder Storm deals +20% damage. Gains +5 INT.
+  - Mana Flow Mastery (mag_t4_surge): Mana Flow grants +3 Energy instead of +2. Gains +5 CHA.
+  - Pyromancy (mag_t5_fireball): Firebolt applies 2 stacks of Burn instead of 1.
+  - Glass Cannon (mag_t6_glacial): Magic damage dealt is increased by 15%. Gains +15 INT but reduces CON by 5.
+  - Mana Shielding (mag_t7_shield): Mana Flow also grants a Shield equal to 15% of Mage's max HP.
+  - Elemental Overload (mag_t8_overload): Casting any spell has a 25% chance to refund 1 Energy point.
+  - Arcane Spark (mag_t9_mastery): Permanent +10 INT. Spells gain +15% Critical Strike chance.
+  - Cataclysm (mag_t10_meteor): Thunder Storm has a 35% chance to Stagger all hit enemies for 1 turn.
+
+* Cleric Tree:
+  - Saints Healing Boost (cle_t1_minor_heal): Unlocked by default (0 TP). Holy Grace healing is increased by 20%.
+  - Saintly Overheal Protection (cle_t2_holy_light): Holy Grace overhealing (exceeding target's max HP) is gained as a Shield equal to that overheal amount.
+  - Blessed Bulwark (cle_t3_barrier): Protection Shelter shield absorption is increased by 25% and lasts +1 turn. Gains +5 CON.
+  - Faith Infusion (cle_t4_regenerate): Smite deals 20% more damage. Gains +5 FTH.
+  - Purifying Grace (cle_t5_purify): Holy Grace also cleanses all negative status effects from the healed target.
+  - Divine Barrier (cle_t6_divine_ward): All Shields/Barriers applied by the Cleric are 15% stronger. Gains +5 CON.
+  - Aura of Hope (cle_t7_aura): Permanent +15 DEF and +10% Max HP.
+  - Angelic Recovery (cle_t8_resurrection): Permanent +15 FTH and +10 CON.
+  - Sacred Ward (cle_t9_sacred_ground): Smite has a 50% chance to Stagger the target for 1 turn.
+  - Miraculous Favor (cle_t10_miracle): Cleric healing skills and shields are 20% stronger. Gains +10 FTH.
+
+* Rogue Tree:
+  - Fleet Foot (rog_t1_nimble): Unlocked by default (0 TP). Permanent +10 DEX and +5 LCK.
+  - Stab Mastery (rog_t2_backstab): Stab deals +20% damage and has +15% Critical Strike chance. Gains +5 DEX.
+  - Lethal Poison (rog_t3_cloak): Stab and Bleed Strike have a 30% chance to apply Poison DoT. Gains +5 LCK.
+  - Deep Wounds (rog_t4_hemorrhage): Bleed Strike DoT damage is increased by 30%. Gains +5 DEX.
+  - Shadow Dancer (rog_t5_evasive): Shadow Step grants +15% Dodge and lasts 1 turn longer.
+  - Serrated Blades (rog_t6_venomous): Rogue attacks ignore 20% of the target's Defense.
+  - Opportunist (rog_t7_lucky): Rogue deals +20% damage to targets that are currently bleeding or poisoned.
+  - Lethal Edge (rog_t8_cuts): Critical hits deal +25% Critical Damage. Gains +10 DEX.
+  - Evasive Maneuver (rog_t9_mark): Evading an attack grants +1 Energy point (once per round). Gains +10 LCK.
+  - Reaper's Mark (rog_t10_reaper): Attacks against targets below 50% HP have +30% Critical Strike chance.
+
+* Bard Tree:
+  - Lyricist (brd_t1_courage): Unlocked by default (0 TP). Permanent +10 CHA.
+  - Valor Anthem Mastery (brd_t2_hymn): Valor Anthem damage boost is increased to +35% (up from 25%). Gains +5 CHA.
+  - Dissonance Shatter (brd_t3_discord): Dissonance deals +20% damage and reduces target DEF by 15% for 2 turns. Gains +5 DEX.
+  - Soothing Lute Mastery (brd_t4_fortune): Soothing Lute health regeneration value is increased by 25%. Gains +5 LCK.
+  - Inspire (brd_t5_rally): All allies gain +5 Initiative at the start of battle.
+  - Captivating Performance (brd_t6_anthem): Dissonance has a 30% chance to Silence (Stun) target for 1 turn.
+  - Healer's Chord (brd_t7_lure): Valor Anthem also heals all allies for 15% of Bard's CHA value.
+  - Melodic Shield (brd_t8_encore): Soothing Lute also grants a minor shield absorbing 15% of Bard's CHA value.
+  - Rhythmic Flow (brd_t9_virtuoso): Reduces the cooldown of all Bard skills by 1 turn. Gains +10 CHA.
+  - Grand Finale (brd_t10_grand_finale): When an ally defeats an enemy, all allies gain +1 Energy.
+
+================================================================================
+6. ITEMS AND CRAFTING
+================================================================================
+
+---------------------------
+A. EQUIPMENT SLOTS
+---------------------------
+Characters can equip gear in 10 slots:
+- Weapon (Sword/Bow/Staff/Tome/Dagger/Lute)
+- Offhand (Shield)
+- Helmet
+- Chestplate
+- Leggings
+- Boots
+- Ring
+- Bracelet
+- Necklace
+- Charm
+
+---------------------------
+B. CRAFTING RECIPES DATABASE
+---------------------------
+Gear can be created during the Campground Feast using raw materials:
+- Iron Ore:            Base metal chunk.
+- Wolf Pelt:           Tailoring hide.
+- Magic Bloom:         Luminescent mana petal.
+- Ancient Bone:         Calcified skeleton piece.
+- Voidstone Fragment:  [NEW] Shard of void-matter.
+- Demon Blood Vial:    [NEW] Viscous demon blood.
+- Soul Thread:         [NEW] Captured soul filament.
+- Blessed Silk:        [NEW] Sanctified loom fabric.
+- Glacial Shard:       [NEW] Ice-elemental shard.
+- Shadow Silk:         [NEW] Void-spider silk.
+- Ember Core:          [NEW] Smouldering fire core.
+- Chimera Feather:     [NEW] Multi-elemental beast feather.
+- Moonsilk Thread:     [NEW] Moon enchanted silkworm silk.
+- Toxin Gland:         [NEW] Poison gland.
+- Void Residue:        [NEW] Volatile void residue.
+- Volcanic Ash:        [NEW] Volcanic zones gathering.
+
+Recipes List:
+- Iron Sword:             3x Iron Ore + 1x Wolf Pelt
+- Composite Bow:          2x Wolf Pelt + 1x Iron Ore
+- Apprentice Staff:       2x Magic Bloom + 1x Iron Ore
+- Priest's Tome:          1x Magic Bloom + 2x Ancient Bone
+- Bronze Dagger:          2x Iron Ore + 1x Wolf Pelt
+- Willow Lute:            2x Wolf Pelt + 1x Magic Bloom
+- Gilded Broadsword:      6x Iron Ore + 3x Ancient Bone
+- Warblade of the Fallen: 6x Iron Ore + 2x Voidstone Fragment + 2x Ancient Bone
+- Berserker's Cleaver:    4x Iron Ore + 3x Demon Blood Vial
+- Knight's Honour Blade:  4x Iron Ore + 1x Blessed Silk
+- Longbow of Gales:       5x Wolf Pelt + 3x Magic Bloom
+- Sharpshooter's Sighted Bow: 4x Wolf Pelt + 2x Chimera Feather
+- Twin Bolt Crossbows:    3x Iron Ore + 3x Wolf Pelt + 1x Void Residue
+- Archmage Scepter:       6x Magic Bloom + 2x Ancient Bone
+- Inferno Rod:            3x Magic Bloom + 3x Volcanic Ash
+- Frostweave Wand:        2x Magic Bloom + 2x Glacial Shard
+- Summoner's Binding Orb: 4x Magic Bloom + 2x Soul Thread
+- Tome of Divine Wrath:   4x Ancient Bone + 3x Blessed Silk + 1x Soul Thread
+- Inquisitor's Flamebrand: 3x Iron Ore + 2x Ancient Bone + 2x Ember Core
+- Assassin's Fang:        3x Iron Ore + 3x Toxin Gland + 2x Shadow Silk
+- Duelist's Rapier:       3x Iron Ore + 2x Wolf Pelt + 1x Moonsilk Thread
+- Grand Chaos Lyre:       3x Wolf Pelt + 2x Void Residue + 2x Magic Bloom
+- Valor Horn:             3x Iron Ore + 2x Blessed Silk + 1x Chimera Feather
+- Iron Shield:            3x Iron Ore + 1x Wolf Pelt
+- Steel Aegis:            6x Iron Ore + 2x Ancient Bone
+- Void-Tempered Bulwark:  6x Iron Ore + 3x Voidstone Fragment + 2x Ancient Bone
+- Cleric's Holy Buckler:  2x Iron Ore + 2x Blessed Silk
+- Spellbreaker Ward:      3x Magic Bloom + 2x Glacial Shard
+- Iron Helm:              3x Iron Ore
+- Berserker's Horned Crown: 4x Iron Ore + 2x Demon Blood Vial
+- Mage's Arcane Cowl:     2x Magic Bloom + 1x Moonsilk Thread
+- High Priest's Mitre:    2x Blessed Silk + 2x Ancient Bone
+- Shadowhood:             2x Shadow Silk + 1x Wolf Pelt
+- Inquisitor's Warhelm:   4x Iron Ore + 2x Blessed Silk
+- Bard's Feathered Hat:   1x Wolf Pelt + 1x Chimera Feather
+- Void Visage:            2x Voidstone Fragment + 2x Ancient Bone + 1x Soul Thread
+- Glorious Steel Plate:   8x Iron Ore + 4x Ancient Bone
+- Chainmail of the Watch: 4x Iron Ore + 1x Wolf Pelt
+- Rogue's Leatherweave:   2x Wolf Pelt + 1x Shadow Silk
+- Woven Mage Robe:        2x Magic Bloom + 1x Moonsilk Thread
+- Holy Vestments:         2x Blessed Silk + 2x Ancient Bone
+- Demon-Forged Cuirass:   5x Iron Ore + 4x Demon Blood Vial + 2x Voidstone Fragment
+- Iron Leggings:          3x Iron Ore
+- Windstride Leggings:    2x Wolf Pelt + 1x Magic Bloom
+- Boneweave Trousers:     4x Ancient Bone + 1x Wolf Pelt
+- Void-Silk Drape:        3x Shadow Silk + 2x Void Residue
+- Iron-Toed Boots:        2x Iron Ore + 1x Wolf Pelt
+- Phantom Step Boots:     2x Shadow Silk + 2x Soul Thread
+- Bard's Springheels:     1x Wolf Pelt + 2x Moonsilk Thread
+- Mage's Floatweave Slippers: 2x Magic Bloom + 1x Moonsilk Thread
+- Sabatons of Conviction: 3x Iron Ore + 2x Blessed Silk
+- Ring of Iron Will:      3x Iron Ore + 1x Ancient Bone
+- Luckstone Ring:         1x Ancient Bone + 2x Magic Bloom
+- Ring of the Void Pact:  2x Voidstone Fragment + 1× Soul Thread
+- Cleric's Sanctified Band: 2x Ancient Bone + 2x Blessed Silk
+- Duelist's Promise Ring: 2x Iron Ore + 1x Moonsilk Thread + 1x Chimera Feather
+- Berserker's Bloodring:  3x Demon Blood Vial + 1x Iron Ore
+- Archer's Eagle Ring:    1x Chimera Feather + 2x Wolf Pelt
+- Warrior's Iron Brace:   2x Iron Ore
+- Bowstring Bracers:      1x Wolf Pelt + 1x Chimera Feather
+- Sorcerer's Runebracers: 2x Ancient Bone + 2x Magic Bloom
+- Assassin's Poison Vambraces: 2x Toxin Gland + 1x Iron Ore + 1x Shadow Silk
+- Songweaver Cuffs:       1x Magic Bloom + 2x Moonsilk Thread
+- Amulet of the Stalwart: 3x Iron Ore + 1x Ancient Bone
+- Hex-Ward Pendant:       2x Glacial Shard + 1x Ancient Bone + 1x Magic Bloom
+- Soul-Siphon Chain:      3x Soul Thread + 2x Demon Blood Vial
+- Cleric's Prayer Beads:  3x Ancient Bone + 1x Blessed Silk
+- Sharpshooter's Scope Monocle: 2x Chimera Feather + 1x Magic Bloom
+- Void Throat Stone:      3x Voidstone Fragment + 1x Soul Thread
+- Talisman of Power:      3x Iron Ore + 3x Wolf Pelt + 3x Magic Bloom + 3x Ancient Bone
+- Void Crystal Lens:      4x Voidstone Fragment + 1x Ancient Bone
+- Rusted Compass:         1x Iron Ore + 1x Ancient Bone + 1x Magic Bloom
+- Familiar's Token:       3x Soul Thread + 2x Magic Bloom
+- Demon Eye Charm:        2x Demon Blood Vial + 1x Voidstone Fragment
+- Blessed War Icon:       1x Blessed Silk + 1x Ancient Bone
+- Phoenix Feather:        5x Magic Bloom + 3x Ancient Bone
+- Blessed Oil:            2x Magic Bloom + 1x Ancient Bone
+- Greater Healing Draught: 3x Magic Bloom + 1x Ember Core
+- Antidote Capsule:       1x Magic Bloom + 1x Toxin Gland
+- Demonic Stimulant:      3x Demon Blood Vial + 1x Toxin Gland
+- Mana Crystal:           3x Magic Bloom + 1x Glacial Shard
+- Smoke Bomb:             1x Shadow Silk + 1x Volcanic Ash
+- Warding Incense:        2x Blessed Silk + 1x Ember Core
+- Berserk Brew:           2x Demon Blood Vial + 1x Volcanic Ash
+- Echo Scroll:            2x Ancient Bone + 3x Magic Bloom + 1x Soul Thread
+- Frost Shard Flask:      2x Glacial Shard + 1x Void Residue
+- Soul Lantern:           3x Soul Thread + 3x Ancient Bone + 2x Blessed Silk
+
+================================================================================
+7. NARRATIVE EVENTS & MULTIPLAYER VOTING
+================================================================================
+The campaign includes 100 narrative event cards. When a party lands on an 
+"event" node, a story template is selected randomly.
+
+- Stats Check: Many choices feature attribute-based checks (e.g. STR, DEX, INT, FTH, LCK, CHA). 
+  The system queries the highest attribute value in the party to resolve the outcome.
+- Rewards/Penalties: Choices yield gold, materials, experience points, status effects,
+  permanent talent points, or trigger battles.
+- Multiplayer Voting: In P2P multiplayer mode, every player in the room votes on their
+  preferred choice. When at least 50% of the room has voted, a 5-second countdown triggers. 
+  The choice with the highest tally is automatically resolved for the whole room.
+================================================================================
+
+================================================================================
+8. CHAPTER ENEMY ROSTERS, SKILLS & MATERIAL DROPS
+================================================================================
+Each chapter features a distinct set of enemies with specific AI roles, special combat abilities, and localized material drops:
+
+---------------------------
+CHAPTER 1: FOREST
+---------------------------
+- Rabid Timberwolf (Attacker)
+  * Skills: [Rabid Bite] (Physical attack inflicting Bleed DoT)
+  * Drops: Wolf Pelt, Ancient Bone
+- Gnarled Mandrake (Spellcaster)
+  * Skills: [Spore Puff] (Poison DoT), [Mandrake Screech] (Deals -25% damage)
+  * Drops: Magic Bloom, Toxin Gland
+- Mossback Tortoise (Tank)
+  * Skills: [Shell Retreat] (Gains Shield and Taunts allies)
+  * Drops: Iron Ore, Ancient Bone
+- Venomous Spindle-Spider (Attacker)
+  * Skills: [Web Bind] (Physical attack inflicting Bleed DoT)
+  * Drops: Toxin Gland, Shadow Silk
+- Fungal Spore-Growth (Spellcaster)
+  * Skills: [Toxic Cloud] (Poison DoT), [Curse of Weakness] (Deals -25% damage)
+  * Drops: Magic Bloom, Moonsilk Thread
+- [BOSS] Ancient Timber-Giant
+  * Drops: Ancient Bone, Blessed Silk, Chimera Feather
+
+---------------------------
+CHAPTER 2: DUNGEON CATACOMBS
+---------------------------
+- Skeleton Archer (Attacker)
+  * Skills: [Rent Flesh] (Physical attack inflicting Bleed DoT)
+  * Drops: Ancient Bone, Moonsilk Thread
+- Cursed Lich-Acolyte (Spellcaster)
+  * Skills: [Death Plague] (Poison DoT), [Soul Siphon] (Inflicts +50% Vuln)
+  * Drops: Soul Thread, Blessed Silk
+- Grave Sentry (Tank)
+  * Skills: [Tomb Aegis] (Gains Shield and Taunts)
+  * Drops: Iron Ore, Ancient Bone
+- Gargoyle Stone-Watcher (Tank)
+  * Skills: [Stone Form] (Gains Shield and Taunts)
+  * Drops: Iron Ore, Glacial Shard
+- Dungeon Jelly-Blob (Attacker)
+  * Skills: [Rent Flesh] (Physical attack inflicting Bleed DoT)
+  * Drops: Toxin Gland, Magic Bloom
+- [BOSS] Bone Drake
+  * Drops: Ancient Bone, Soul Thread, Glacial Shard
+
+---------------------------
+CHAPTER 3: VOLCANIC PEAK
+---------------------------
+- Fire Imp Spawn (Spellcaster)
+  * Skills: [Fiery Blast] (Poison/Burn DoT), [Hex of Vulnerability] (takes +50% dmg)
+  * Drops: Ember Core, Volcanic Ash
+- Ashen Hellhound (Attacker)
+  * Skills: [Flame Fangs] (Physical attack inflicting Bleed/Burn DoT)
+  * Drops: Demon Blood Vial, Wolf Pelt
+- Lava Beetle (Tank)
+  * Skills: [Bulwark Stance] (Gains Shield and Taunts)
+  * Drops: Iron Ore, Volcanic Ash
+- Magma Golem (Tank)
+  * Skills: [Magma Barrier] (Gains Shield and Taunts)
+  * Drops: Ember Core, Ancient Bone
+- Infernal Succubus (Spellcaster)
+  * Skills: [Abyssal Hex] (takes +50% dmg), [Seductive Chord] (deals -25% dmg)
+  * Drops: Demon Blood Vial, Soul Thread
+- [BOSS] Archdemon Commander
+  * Drops: Demon Blood Vial, Ember Core, Chimera Feather
+
+---------------------------
+CHAPTER 4: VOID CATACOMBS
+---------------------------
+- Wraith-Stalker (Attacker)
+  * Skills: [Soul Reap] (Physical attack inflicting Bleed DoT)
+  * Drops: Shadow Silk, Voidstone Fragment
+- Bone Amalgamation (Tank)
+  * Skills: [Bulwark Stance] (Gains Shield and Taunts)
+  * Drops: Ancient Bone, Void Residue
+- Vareth's Disciple (Spellcaster)
+  * Skills: [Void Eruption] (takes +50% dmg), [Curse of Weakness] (deals -25% dmg)
+  * Drops: Soul Thread, Voidstone Fragment
+- Cursed Dread-Knight (Tank / Attacker)
+  * Skills: [Unholy Strike] (Physical attack inflicting Bleed DoT)
+  * Drops: Iron Ore, Shadow Silk
+- Necromancer Acolyte (Spellcaster)
+  * Skills: [Necrotic Plague] (Poison DoT), [Curse of Weakness] (deals -25% dmg)
+  * Drops: Soul Thread, Void Residue
+- [BOSS] Lich King Vareth
+  * Drops: Voidstone Fragment, Void Residue, Soul Thread
+================================================================================
+9. RACE SYSTEM
+================================================================================
+The Race System permits players to select a starting Race for their primary character and companions during lobby customization. Each race offers unique tactical traits, passive team synergies, or significant trade-offs:
+
+1. Human
+   - Advantage: +1 Stat Point to use when leveling up (+4 Stat Points total per level, instead of 3).
+   - Disadvantage: None.
+2. Elf
+   - Advantage: Crit Chance & Crit Damage +20% flat. 50% chance to double material drops from combat.
+   - Disadvantage: Takes x2 damage from Poison status effect.
+3. Dwarves
+   - Advantage: +10% health (final calculation multiplier). Every 10 levels, crafted items gain +10% stats (integer floored).
+   - Disadvantage: None.
+4. Dragonborn
+   - Advantage: +10% Strength. Defense increased by +20% or +8 flat (whichever is higher).
+   - Disadvantage: Takes x2 damage from Bleed status effect.
+5. Goblin
+   - Advantage: +25% Gold gains (party benefit, does not stack). +1 Initiative roll.
+   - Disadvantage: None.
+6. Vampire
+   - Advantage: Lifesteal: heals 20% of damage dealt from all attacks and counters.
+   - Disadvantage: -20% final stats reduction (applied to core attributes).
+7. Succubus
+   - Advantage: +25% Charisma. Reduces narrative event stat check thresholds by 20% flat (party benefit, does not stack).
+   - Disadvantage: -20% Max HP. Takes x2 damage from Burn status effect.
+8. Dryad
+   - Advantage: +20% outgoing healing. Team gains +10% EXP gained (party benefit, does not stack).
+   - Disadvantage: Takes x2 damage from Burn status effect.
+
+================================================================================
+
