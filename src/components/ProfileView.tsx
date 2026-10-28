@@ -1145,7 +1145,18 @@ export function ProfileView({
                   </p>
                 )}
 
-                {profile && (
+                {profile && (() => {
+                  const xpVal = profile.xp || 0;
+                  const lobbyLvl = profile.level ?? 1;
+                  const xpForNext = Math.floor((lobbyLvl * (lobbyLvl + 1)) / 2 * 3);
+                  const xpPrev = Math.floor((lobbyLvl * (lobbyLvl - 1)) / 2 * 3);
+                  const xpInLevel = xpVal - xpPrev;
+                  const xpNeeded = xpForNext - xpPrev;
+                  const xpPct = Math.min(100, Math.round((xpInLevel / Math.max(1, xpNeeded)) * 100));
+                  const tpc = profile.talentPointsByClass || {};
+                  const utc = profile.unlockedTalentsByClass || {};
+
+                  return (
                   <div className="space-y-4 pt-1 font-mono text-xs">
                     <div className="space-y-1.5 border-b border-slate-800/50 pb-3">
                       <label className="text-xs text-slate-400 uppercase block mb-1">
@@ -1166,19 +1177,87 @@ export function ProfileView({
                         </button>
                       </div>
                     </div>
+
                     <div className="flex justify-between items-center">
-                      <span className="text-slate-500">Player level:</span>
-                      <strong className="text-amber-400 font-bold text-sm">
-                        Lv {profile.level ?? 1}
+                      <span className="text-slate-500">Race:</span>
+                      <strong className="text-amber-300 font-bold text-sm">
+                        {profile.race || "Human"}
                       </strong>
                     </div>
                     <div className="flex justify-between items-center">
+                      <span className="text-slate-500">Gold:</span>
+                      <strong className="text-yellow-400 font-bold text-sm">
+                        {profile.gold ?? 0} G
+                      </strong>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-500">Player Level:</span>
+                      <strong className="text-amber-400 font-bold text-sm">
+                        Lv {lobbyLvl}
+                      </strong>
+                    </div>
+
+                    {/* XP Progress Bar */}
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-[10px]">
+                        <span className="text-slate-500">XP: {xpVal}</span>
+                        <span className="text-slate-600">Next Lv: {xpForNext}</span>
+                      </div>
+                      <div className="w-full bg-slate-800 rounded-full h-2.5 border border-slate-700">
+                        <div
+                          className="bg-gradient-to-r from-indigo-500 to-amber-400 h-2.5 rounded-full transition-all"
+                          style={{ width: `${xpPct}%` }}
+                        />
+                      </div>
+                      <span className="text-[10px] text-slate-600">
+                        {xpInLevel} / {xpNeeded} XP ({xpPct}%)
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between items-center">
                       <span className="text-slate-500">
-                        Unspent Talent Points (TP):
+                        Unspent TP (current class):
                       </span>
                       <strong className="text-indigo-400 font-bold text-sm">
                         {profile.talentPoints ?? 0} TP
                       </strong>
+                    </div>
+
+                    {/* Per-Class Levels & TP */}
+                    <div className="bg-slate-900 border border-slate-800 rounded-lg p-3 space-y-2">
+                      <span className="text-[10px] text-slate-400 uppercase font-bold block">
+                        Class Progress
+                      </span>
+                      {classesList.map(cls => {
+                        const clsTP = tpc[cls] || 0;
+                        const clsUnlocks = (utc[cls] || []).length;
+                        const tree = TALENT_TREES[cls] || [];
+                        const maxNodes = tree.length;
+                        return (
+                          <div key={cls} className="flex justify-between items-center text-[11px]">
+                            <span className={`font-bold ${selectedClass === cls ? "text-indigo-300" : "text-slate-500"}`}>
+                              {cls}
+                            </span>
+                            <div className="flex gap-3">
+                              <span className="text-indigo-400" title="Talent Points">{clsTP} TP</span>
+                              <span className="text-slate-600">|</span>
+                              <span className="text-emerald-500" title={`Talents unlocked: ${clsUnlocks}/${maxNodes}`}>
+                                {clsUnlocks}/{maxNodes} nodes
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Inventory Summary */}
+                    <div className="bg-slate-900 border border-slate-800 rounded-lg p-3">
+                      <span className="text-[10px] text-slate-400 uppercase font-bold block mb-1">
+                        Inventory
+                      </span>
+                      <span className="text-[11px] text-slate-500">
+                        {(profile.inventory || []).length} items
+                      </span>
                     </div>
 
                     <div>
@@ -1209,7 +1288,7 @@ export function ProfileView({
                       </div>
                     )}
                   </div>
-                )}
+                )})()}
               </div>
             </div>
           </div>

@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from "react";
-import { Character, Item, AdvancedClassName, ChoiceEffect, CharacterClass } from "./types";
+import React, { useState, useEffect, useRef } from "react";
+import { Character, Item, AdvancedClassName, ChoiceEffect, CharacterClass, Enemy } from "./types";
 import { BroadcastLobby } from "./components/BroadcastLobby";
 import { BattleScene } from "./components/BattleScene";
 import { CampingMenu } from "./components/CampingMenu";
@@ -12,12 +12,25 @@ import { MapEventList, MapNode } from "./components/MapEventList";
 import { ClassAdvancement } from "./components/ClassAdvancement";
 import { ProfileView } from "./components/ProfileView";
 import { HelpGuide } from "./components/HelpGuide";
-import { spawnEnemyGroup, getMaxAreaForChapter, getChapterDisplayName, getChapterEmoji } from "./enemies_db";
+import { spawnEnemyGroup, spawnFixedEncounter, getMaxAreaForChapter, getChapterDisplayName, getChapterEmoji } from "./enemies_db";
 import { syncBridge } from "./utils/sync";
 import { CLASS_AVATARS, getDerivedStats, START_STATS, getBaseClass } from "./skills_db";
 import { ITEMS_DATABASE } from "./items_db";
 import { MYSTERY_STORIES } from "./events_db";
 import { Swords, RefreshCw, Trophy, Skull } from "lucide-react";
+
+// ── Pure helpers kept outside the component so they are never re-created ──
+
+/** XP → Level formula: level = floor((1 + sqrt(1 + 8·xp/3)) / 2) */
+const xpToLevel = (xp: number): number => {
+  const level = Math.floor((1 + Math.sqrt(1 + (8 * xp) / 3)) / 2);
+  return Math.max(1, level);
+};
+
+/** Cumulative XP needed to reach a given level: level*(level-1)/2 * 3 */
+const xpForLevel = (level: number): number => {
+  return Math.floor((level * (level - 1)) / 2 * 3);
+};
 
 const isTier3Class = (cl: string): boolean => {
   return [
@@ -61,9 +74,12 @@ export default function App() {
 
   // Game Run States
   const [party, setParty] = useState<Character[]>([]);
+  const partyRef = useRef<Character[]>(party);
+  const hasSavedEndRunRef = useRef(false);
+  const eventCombatRef = useRef(false);
   const [inventory, setInventory] = useState<Item[]>([]);
   const [sharedStash, setSharedStash] = useState<Item[]>([]);
-  const [gold, setGold] = useState<number>(100);
+  const [gold, setGold] = useState<number>(50);
   const [stashGold, setStashGold] = useState<number>(0);
   const [chapter, setChapter] = useState<number>(1);
   const [area, setArea] = useState<number>(0);
@@ -73,7 +89,7 @@ export default function App() {
   const [forceShopNext, setForceShopNext] = useState<boolean>(false);
 
   // Current Battle state
-  const [combatEnemies, setCombatEnemies] = useState<any[]>([]);
+  const [combatEnemies, setCombatEnemies] = useState<Enemy[]>([]);
 
   // Eligible promotion placeholder
   const [pendingPromotionChar, setPendingPromotionChar] = useState<Character | null>(null);
@@ -87,6 +103,7 @@ export default function App() {
   // Lifted mystery story and shop states
   const [activeStoryIndex, setActiveStoryIndex] = useState<number | null>(null);
   const [activeShopOpen, setActiveShopOpen] = useState<boolean>(false);
+  const [activeShopWares, setActiveShopWares] = useState<string[]>([]);
 
   // Voting states
   const [votes, setVotes] = useState<Record<string, string>>({});
@@ -108,11 +125,12 @@ export default function App() {
     (window as any).showNotification = showNotification;
   }, []);
 
+  // (xpToLevel / xpForLevel are defined above the component)
+
   const savePartyProfiles = async (currentParty: Character[], currentGold = gold) => {
     for (const char of currentParty) {
       if (!char.isSummon && char.name) {
         const existing = await syncBridge.loadProfile(char.name);
-        const baseLevel = existing ? (existing.level ?? 1) : 1;
         const baseCls = getBaseClass(char.class);
         const talentPointsByClass = { ...(existing?.talentPointsByClass || {}) };
         const unlockedTalentsByClass = { ...(existing?.unlockedTalentsByClass || {}) };
@@ -120,13 +138,15 @@ export default function App() {
         talentPointsByClass[baseCls] = char.talentPoints || 0;
         unlockedTalentsByClass[baseCls] = char.unlockedTalents || [];
 
+        const totalXp = (existing?.xp || 0) + (char.xp || 0);
+        const lobbyLevel = xpToLevel(totalXp);
+
         await syncBridge.saveProfile(char.name, {
+          ...existing,
           id: char.id,
           username: char.name,
-          password: char.password || (existing ? existing.password : ""),
-          level: baseLevel, // Keep persistent cumulative level
-          xp: char.xp,
-          gold: currentGold,
+          level: lobbyLevel,
+          xp: totalXp,
           talentPoints: char.talentPoints || 0,
           unlockedTalents: char.unlockedTalents || [],
           talentPointsByClass,
@@ -134,22 +154,23 @@ export default function App() {
           race: char.race || (existing ? existing.race : "Human"),
           avatarUrl: char.avatarUrl || (existing ? existing.avatarUrl : ""),
           class: baseCls,
-          inventory: char.inventory || [],
         });
       }
     }
+    // Batch-reset per-battle XP in a single setState call (avoids N re-renders)
+    setParty(prev => prev.map(p => ({ ...p, xp: 0 })));
   };
 
   const savePartyProfilesEndRun = async (currentParty: Character[], currentGold = gold) => {
     for (const char of currentParty) {
       if (!char.isSummon && char.name) {
         const existing = await syncBridge.loadProfile(char.name);
-        const baseLevel = existing ? (existing.level ?? 1) : 1;
-        const cumulativeLevel = baseLevel + char.level;
         const baseCls = getBaseClass(char.class);
-        
         const talentPointsByClass = { ...(existing?.talentPointsByClass || {}) };
         const unlockedTalentsByClass = { ...(existing?.unlockedTalentsByClass || {}) };
+
+        const totalXp = (existing?.xp || 0) + (char.xp || 0);
+        const lobbyLevel = xpToLevel(totalXp);
 
         const startPoints = existing?.talentPointsByClass?.[baseCls] ?? existing?.talentPoints ?? 0;
         const earnedPoints = Math.max(0, (char.talentPoints || 0) - startPoints);
@@ -159,12 +180,11 @@ export default function App() {
         unlockedTalentsByClass[baseCls] = char.unlockedTalents || (existing?.unlockedTalents || []);
 
         await syncBridge.saveProfile(char.name, {
+          ...existing,
           id: char.id,
           username: char.name,
-          password: char.password || (existing ? existing.password : ""),
-          level: cumulativeLevel, // Add run level to cumulative level
-          xp: char.xp,
-          gold: currentGold,
+          level: lobbyLevel,
+          xp: totalXp,
           talentPoints: totalBasePoints,
           unlockedTalents: unlockedTalentsByClass[baseCls],
           talentPointsByClass,
@@ -172,18 +192,21 @@ export default function App() {
           race: char.race || (existing ? existing.race : "Human"),
           avatarUrl: char.avatarUrl || (existing ? existing.avatarUrl : ""),
           class: baseCls,
-          inventory: [], // Do not save the items/materials to the next run
         });
       }
     }
   };
 
-  // Auto-save on GAMEOVER
+  // Auto-save on GAMEOVER (only once per run)
   useEffect(() => {
-    if (phase === "GAMEOVER" && party.length > 0) {
+    if (phase === "GAMEOVER" && party.length > 0 && !hasSavedEndRunRef.current) {
+      hasSavedEndRunRef.current = true;
       savePartyProfilesEndRun(party);
     }
   }, [phase]);
+
+  // Keep partyRef in sync with party state
+  useEffect(() => { partyRef.current = party; }, [party]);
 
   // Web Sockets P2P Sync Bridge
   useEffect(() => {
@@ -205,6 +228,7 @@ export default function App() {
         setCombatEnemies(payload.combatEnemies);
         setActiveStoryIndex(payload.activeStoryIndex);
         setActiveShopOpen(payload.activeShopOpen);
+        if (payload.activeShopWares) setActiveShopWares(payload.activeShopWares);
       } else if (type === "SYNC_VOTES") {
         setVotes(payload.votes || {});
       } else if (type === "SYNC_CONTINUE_VOTE") {
@@ -214,7 +238,7 @@ export default function App() {
         setContinueCountdown(null);
       } else if (type === "PLAYER_QUIT") {
         const quitterId = payload.playerId;
-        const updatedParty = party.filter(p => p.id !== quitterId);
+        const updatedParty = partyRef.current.filter(p => p.id !== quitterId);
         if (updatedParty.length === 0) {
           setPhase("GAMEOVER");
           showNotification("All players have quit the game.", "error");
@@ -228,7 +252,7 @@ export default function App() {
           setPhase("GAMEOVER");
           showNotification("You have been kicked from the game.", "error");
         } else {
-          const updatedParty = party.filter(p => p.id !== kickedId);
+          const updatedParty = partyRef.current.filter(p => p.id !== kickedId);
           setParty(updatedParty);
           showNotification(`Player ${kickedId} has been kicked.`, "info");
         }
@@ -238,7 +262,9 @@ export default function App() {
     return () => {
       // Cleanup is managed by syncBridge
     };
-  }, [p2pMode, roomId, myPlayerId, party]);
+  }, [p2pMode, roomId, myPlayerId]);
+
+  const lastGlobalBroadcastRef = useRef<string>("");
 
   const broadcastGlobalState = (
     nextPhase: GamePhase,
@@ -253,26 +279,34 @@ export default function App() {
     nextEnemies: any[],
     storyIdx: number | null = activeStoryIndex,
     shopOpen: boolean = activeShopOpen,
-    nextStashGold: number = stashGold
+    nextStashGold: number = stashGold,
+    shopWares: string[] = activeShopWares
   ) => {
     if (p2pMode === "multiplayer" && roomId) {
+      const payload = {
+        phase: nextPhase,
+        party: nextParty,
+        inventory: nextInv,
+        sharedStash: nextStash,
+        gold: nextGold,
+        stashGold: nextStashGold,
+        chapter: nextCh,
+        area: nextAr,
+        maxArea: nextMaxAr,
+        availableNodes: nextNodes,
+        combatEnemies: nextEnemies,
+        activeStoryIndex: storyIdx,
+        activeShopOpen: shopOpen,
+        activeShopWares: shopWares,
+      };
+      
+      const payloadStr = JSON.stringify(payload);
+      if (lastGlobalBroadcastRef.current === payloadStr) return;
+      lastGlobalBroadcastRef.current = payloadStr;
+
       syncBridge.send(`aac-game-${roomId}`, {
         type: "SYNC_GLOBAL_STATE",
-        payload: {
-          phase: nextPhase,
-          party: nextParty,
-          inventory: nextInv,
-          sharedStash: nextStash,
-          gold: nextGold,
-          stashGold: nextStashGold,
-          chapter: nextCh,
-          area: nextAr,
-          maxArea: nextMaxAr,
-          availableNodes: nextNodes,
-          combatEnemies: nextEnemies,
-          activeStoryIndex: storyIdx,
-          activeShopOpen: shopOpen,
-        },
+        payload,
       });
     }
   };
@@ -307,7 +341,7 @@ export default function App() {
       setCountdown(prev => (prev !== null ? prev - 1 : null));
     }, 1000);
     return () => clearTimeout(timer);
-  }, [countdown]);
+  }, [countdown, votes]); // votes dep ensures resolveActiveVote reads current vote state
 
   const castVote = (choiceId: string) => {
     if (p2pMode !== "multiplayer" || !roomId) return;
@@ -321,7 +355,7 @@ export default function App() {
   };
 
   const resolveActiveVote = () => {
-    const isHost = party.length === 0 || myPlayerId === party[0].id;
+    const isHost = party.length > 0 && myPlayerId === party[0].id;
     if (!isHost) {
       setCountdown(null);
       setVotes({});
@@ -358,11 +392,9 @@ export default function App() {
       if (node) {
         if (node.type === "event") {
           const rng = Math.floor(Math.random() * MYSTERY_STORIES.length);
-          setActiveStoryIndex(rng);
-          broadcastGlobalState("MAP", party, inventory, sharedStash, gold, chapter, area, maxArea, availableNodes, combatEnemies, rng, activeShopOpen);
+          handleSetStoryIndex(rng);
         } else if (node.type === "shop") {
-          setActiveShopOpen(true);
-          broadcastGlobalState("MAP", party, inventory, sharedStash, gold, chapter, area, maxArea, availableNodes, combatEnemies, activeStoryIndex, true);
+          handleSetShopOpen(true);
         } else {
           handleSelectNode(node);
         }
@@ -399,7 +431,7 @@ export default function App() {
         setContinueCountdown(null);
       }
     }
-  }, [continueVotes, party, p2pMode, roomId, continueCountdown]);
+  }, [continueVotes, party, p2pMode, roomId]);
 
   // Continue vote countdown tick
   useEffect(() => {
@@ -415,7 +447,7 @@ export default function App() {
   }, [continueCountdown]);
 
   const resolveContinueVote = () => {
-    const isHost = party.length === 0 || myPlayerId === party[0].id;
+    const isHost = party.length > 0 && myPlayerId === party[0].id;
     // Reset votes on all clients
     if (roomId) {
       syncBridge.send(`aac-game-${roomId}`, {
@@ -458,7 +490,8 @@ export default function App() {
     partyState: Character[],
     invState: Item[],
     goldState: number,
-    logMsg: string[]
+    logMsg: string[],
+    triggeredBy?: string
   ): { p: Character[]; inv: Item[]; g: number; status: "success" | "error" | "info" } => {
     let p = [...partyState];
     let inv = [...invState];
@@ -499,7 +532,7 @@ export default function App() {
         break;
       case "hp":
         if (effect.hpVal !== undefined) {
-          p = p.map(char => ({ ...char, hp: Math.max(10, Math.min(char.maxHp, char.hp + effect.hpVal!)) }));
+          p = p.map(char => ({ ...char, hp: Math.max(1, Math.min(char.maxHp, char.hp + effect.hpVal!)) }));
           logMsg.push(effect.hpVal > 0 ? `✓ Party healed for ${effect.hpVal} HP!` : `✗ Party lost ${Math.abs(effect.hpVal)} HP!`);
           status = effect.hpVal > 0 ? "success" : "error";
           if (effect.successEffect) {
@@ -532,9 +565,8 @@ export default function App() {
             // Fix: validate recipient exists before assigning items
             let recipientId = "";
             if (p2pMode === "multiplayer") {
-              // Check if myPlayerId exists in party
-              const myChar = p.find(c => c.id === myPlayerId);
-              recipientId = myChar ? myPlayerId : (p[0]?.id || "");
+              const targetChar = p.find(c => c.id === triggeredBy) || p.find(c => c.id === myPlayerId);
+              recipientId = targetChar ? targetChar.id : (p[0]?.id || "");
             } else {
               recipientId = p[0]?.id || "";
             }
@@ -644,6 +676,22 @@ export default function App() {
           }
         }
         break;
+      case "regen":
+        // Apply regen status to all party members
+        p = p.map(char => ({
+          ...char,
+          statusEffects: [
+            ...char.statusEffects.filter(se => se.type !== "regen"),
+            { type: "regen" as const, value: effect.statusVal || 5, duration: effect.statusDur || 3 }
+          ]
+        }));
+        logMsg.push(`✓ Party regenerating ${effect.statusVal || 5} HP/turn for ${effect.statusDur || 3} turns!`);
+        status = "success";
+        if (effect.successEffect) {
+          const next = resolveEffect(effect.successEffect, p, inv, g, logMsg);
+          p = next.p; inv = next.inv; g = next.g;
+        }
+        break;
       case "combat":
         if (effect.message) logMsg.push(effect.message);
         break;
@@ -661,9 +709,9 @@ export default function App() {
     if (!choice) return;
 
     const logMsg: string[] = [];
-    const shouldBattle = hasCombatEffect(choice.effect);
 
-    const { p, inv, g, status } = resolveEffect(choice.effect, party, inventory, gold, logMsg);
+    // Resolve the event's effects (gold, hp, xp, stat checks, items, etc.)
+    const { p, inv, g, status } = resolveEffect(choice.effect, party, inventory, gold, logMsg, myPlayerId);
 
     setParty(p);
     setInventory(inv);
@@ -675,17 +723,15 @@ export default function App() {
       (window as any).showNotification(mergedMsg || "Story event resolved.", status);
     }
 
-    if (shouldBattle) {
-      const isElite = story.stars ? story.stars >= 4 : false;
-      const activeEnemies = spawnEnemyGroup(chapter, area, isElite, false, undefined, way, path);
-      setCombatEnemies(activeEnemies);
-      setPhase("BATTLE");
-      broadcastGlobalState("BATTLE", p, inv, sharedStash, g, chapter, area, maxArea, availableNodes, activeEnemies, null, activeShopOpen);
-    } else {
-      // After a non-combat event, transition to CAMP to avoid being stuck on MAP
-      setPhase("CAMP");
-      broadcastGlobalState("CAMP", p, inv, sharedStash, g, chapter, area, maxArea, availableNodes, [], null, activeShopOpen);
-    }
+    // After EVERY event, always trigger a battle encounter.
+    // Events with explicit combat choices or fail-combat ARE the mandatory battle.
+    // Events resolved without combat also spawn a mandatory fixed encounter.
+    // Area advances normally after this battle (eventCombatRef stays false).
+    const isElite = story.stars !== undefined && story.stars >= 4;
+    const activeEnemies = spawnFixedEncounter(chapter, area, p.length, isElite, way, path);
+    setCombatEnemies(activeEnemies);
+    setPhase("BATTLE");
+    broadcastGlobalState("BATTLE", p, inv, sharedStash, g, chapter, area, maxArea, availableNodes, activeEnemies, null, activeShopOpen);
   };
 
   const handleSetStoryIndex = (idx: number | null) => {
@@ -693,9 +739,49 @@ export default function App() {
     broadcastGlobalState(phase, party, inventory, sharedStash, gold, chapter, area, maxArea, availableNodes, combatEnemies, idx, activeShopOpen);
   };
 
+  const generateShopWares = (): string[] => {
+    const regularItems = [
+      "minor_heal", "major_heal", "regeneration_elixir", "energy_brew", "iron_ore", "wolf_pelt",
+      "magic_bloom", "lucky_clover", "antidote", "stun_cure", "burn_cure", "freeze_cure", "shock_cure",
+      "poison_vial", "stun_grenade", "burn_powder", "freeze_crystal", "shock_orb", "strength_potion",
+      "dexterity_potion", "constitution_potion", "intelligence_potion", "faith_potion", "charisma_potion", "luck_potion"
+    ];
+
+    const specialItems = [
+      "cursed_blade_of_vareth", "stormreaver_longbow", "soulflame_grimoire", "seraphs_judgment_hammer",
+      "phantom_eclipse_dagger", "entropys_lament_lyre", "warlords_titan_cleaver", "riftweaver_staff",
+      "abyssal_sovereign_plate", "starweaver_robes", "wraithsilk_shroud", "divine_seraph_vestments",
+      "volcanic_fury_greaves", "eaglelord_winged_boots", "dread_sovereign_helm", "voidwalker_crown",
+      "ring_of_eternal_fury", "seraphs_tear_of_life", "phantom_mirror_pendant", "dragonheart_core_amulet",
+      "luckweavers_fate_thread", "void_anchor_of_stability", "crusaders_unbreakable_oath", "hawkeyes_eternal_focus",
+      "phoenix_rebirth_charm", "archdemon_essence_vial", "void_power_crystal", "alliance_holy_blessing",
+      "demon_eye_of_true_sight", "chaos_elixir_of_transcendence", "timbergiant_heartwood_core",
+      "bone_drake_skeletal_wing", "archdemon_smoldering_horn", "vareth_soul_crystal"
+    ];
+
+    const specialIndex = Math.floor(Math.random() * specialItems.length);
+    const selectedSpecialItem = specialItems[specialIndex];
+
+    const selectedRegularItems: string[] = [];
+    while (selectedRegularItems.length < 9) {
+      const randomIndex = Math.floor(Math.random() * regularItems.length);
+      const randomItem = regularItems[randomIndex];
+      if (!selectedRegularItems.includes(randomItem)) {
+        selectedRegularItems.push(randomItem);
+      }
+    }
+
+    return [selectedSpecialItem, ...selectedRegularItems];
+  };
+
   const handleSetShopOpen = (open: boolean) => {
     setActiveShopOpen(open);
-    broadcastGlobalState(phase, party, inventory, sharedStash, gold, chapter, area, maxArea, availableNodes, combatEnemies, activeStoryIndex, open);
+    let wares = activeShopWares;
+    if (open) {
+      wares = generateShopWares();
+      setActiveShopWares(wares);
+    }
+    broadcastGlobalState(phase, party, inventory, sharedStash, gold, chapter, area, maxArea, availableNodes, combatEnemies, activeStoryIndex, open, stashGold, wares);
   };
 
   const handleStartGame = (
@@ -737,13 +823,9 @@ export default function App() {
 
     const isHost = mode === "solo" || updatedParty.length === 0 || myId === updatedParty[0].id;
 
-    // Both host and non-host generate local nodes so non-host can see SOMETHING immediately.
-    // Host's broadcast will overwrite non-host nodes once WebSocket/BroadcastChannel syncs.
-    // This avoids the race condition where non-host's listener isn't ready for the initial broadcast.
-    const initialPaths = generateMapNodes(1, 1, false);
-    setAvailableNodes(initialPaths);
-
     if (isHost) {
+      const initialPaths = generateMapNodes(1, 1, false);
+      setAvailableNodes(initialPaths);
       broadcastGlobalState(
         "MAP",
         updatedParty,
@@ -756,6 +838,9 @@ export default function App() {
         initialPaths,
         []
       );
+    } else {
+      // Non-host will receive the nodes via SYNC_GLOBAL_STATE broadcast from host
+      setAvailableNodes([]);
     }
 
     setPhase("MAP");
@@ -895,7 +980,14 @@ export default function App() {
   const handleSelectNode = (node: MapNode) => {
     // Generate combat group or safe campground triggers
     if (node.type === "combat" || node.type === "elite_combat" || node.type === "boss") {
-      const activeEnemies = spawnEnemyGroup(chapter, area, node.type === "elite_combat", node.type === "boss", undefined, way, path);
+      let activeEnemies: any[];
+      if (node.type === "boss") {
+        // Boss uses the existing spawnEnemyGroup for proper boss template
+        activeEnemies = spawnEnemyGroup(chapter, area, false, true, undefined, way, path);
+      } else {
+        // Regular and elite encounters use the fixed balanced system
+        activeEnemies = spawnFixedEncounter(chapter, area, party.length, node.type === "elite_combat", way, path);
+      }
       setCombatEnemies(activeEnemies);
       setPhase("BATTLE");
       broadcastGlobalState("BATTLE", party, inventory, sharedStash, gold, chapter, area, maxArea, availableNodes, activeEnemies);
@@ -921,14 +1013,21 @@ export default function App() {
     loot: { gold: number; materials: { id: string; quantity: number }[] }
   ) => {
     // Reward Gold + Material Loot
-    // In multiplayer, distribute loot per player character
     let nextGold = gold + loot.gold;
-    if (p2pMode === "multiplayer" && survivingParty.length > 0) {
-      // Distribute gold equally among surviving players (rounded down, excess to host)
-      const goldPerPlayer = Math.floor(loot.gold / survivingParty.length);
-      nextGold = gold + (goldPerPlayer * survivingParty.length);
-    }
+    // Gold is shared in multiplayer stash
     
+    // Reward XP per chapter scaling
+    const isEventCombat = eventCombatRef.current;
+    const isBossBattle = !isEventCombat && (area + 1) >= maxArea;
+    const xpPerPlayer = chapter * (isBossBattle ? 5 : 1);
+    let finalParty = survivingParty.map(p => ({
+      ...p,
+      xp: (p.xp || 0) + xpPerPlayer,
+    }));
+    const xpLabel = isBossBattle ? `BOSS CLEAR (${xpPerPlayer} XP)`
+      : `Chapter ${chapter} Battle Clear (${xpPerPlayer} XP)`;
+    showNotification(`⭐ ${xpLabel}`, "success");
+
     const addedMaterials: Item[] = loot.materials.map(mat => {
       const dbItem = ITEMS_DATABASE[mat.id];
       if (dbItem) {
@@ -948,37 +1047,44 @@ export default function App() {
     });
 
     // Update inventories - in multiplayer, track per-player items
-    let nextInv = [...inventory];
     if (p2pMode === "multiplayer" && survivingParty.length > 0) {
-      // In multiplayer, distribute materials using true round-robin per player
       addedMaterials.forEach((m, idx) => {
-        const targetPlayerIdx = idx % survivingParty.length;
-        const targetPlayerId = survivingParty[targetPlayerIdx].id;
-        const existing = nextInv.findIndex(i => i.id === m.id && i.ownerId === targetPlayerId);
+        const targetPlayerIdx = idx % finalParty.length;
+        const targetPlayer = finalParty[targetPlayerIdx];
+        const charInv = targetPlayer.inventory || [];
+        const existing = charInv.findIndex(i => i.id === m.id);
+        
+        let nextInv = [...charInv];
         if (existing !== -1 && nextInv[existing].quantity) {
           nextInv[existing].quantity! += m.quantity!;
         } else {
-          nextInv.push({ ...m, ownerId: targetPlayerId });
+          nextInv.push({ ...m });
         }
+        finalParty[targetPlayerIdx] = { ...targetPlayer, inventory: nextInv };
       });
-    } else {
-      // Solo mode - all items go to shared inventory
+    } else if (finalParty.length > 0) {
+      // Solo mode - all items go to the host's party[0] inventory
       addedMaterials.forEach(m => {
-        const existing = nextInv.findIndex(i => i.id === m.id);
+        const targetPlayer = finalParty[0];
+        const charInv = targetPlayer.inventory || [];
+        const existing = charInv.findIndex(i => i.id === m.id);
+        
+        let nextInv = [...charInv];
         if (existing !== -1 && nextInv[existing].quantity) {
           nextInv[existing].quantity! += m.quantity!;
         } else {
-          nextInv.push(m);
+          nextInv.push({ ...m });
         }
+        finalParty[0] = { ...targetPlayer, inventory: nextInv };
       });
     }
 
-    const nextArea = area + 1;
+    eventCombatRef.current = false;
+    const nextArea = isEventCombat ? area : area + 1;
     let nextChapter = chapter;
     let nextMaxArea = maxArea;
     let finalNextArea = nextArea;
 
-    let finalParty = survivingParty;
     // Check if boss has been beaten
     if (nextArea >= maxArea) {
       // Heal the team Fully to max HP and add talent point
@@ -1003,9 +1109,8 @@ export default function App() {
         // After Forest → go to PATH_CHOICE for Way selection
         setPhase("PATH_CHOICE");
         setGold(nextGold);
-        setInventory(nextInv);
         setParty(finalParty);
-        broadcastGlobalState("PATH_CHOICE", finalParty, nextInv, sharedStash, nextGold, 2, 0, 5, [], []);
+        broadcastGlobalState("PATH_CHOICE", finalParty, inventory, sharedStash, nextGold, 2, 0, 5, [], []);
         savePartyProfiles(finalParty, nextGold);
         return;
       } else if (isChapter2) {
@@ -1020,12 +1125,11 @@ export default function App() {
         // After Abandoned Trail (way 1) or Trading City (way 2) → PATH_CHOICE for Path
         setPhase("PATH_CHOICE");
         setGold(nextGold);
-        setInventory(nextInv);
         setParty(finalParty);
         setArea(0);
         setChapter(4);
         setMaxArea(getMaxAreaForChapter(4, way, 1));
-        broadcastGlobalState("PATH_CHOICE", finalParty, nextInv, sharedStash, nextGold, 4, 0, 5, [], []);
+        broadcastGlobalState("PATH_CHOICE", finalParty, inventory, sharedStash, nextGold, 4, 0, 5, [], []);
         savePartyProfiles(finalParty, nextGold);
         return;
       } else if (isChapter4) {
@@ -1039,14 +1143,15 @@ export default function App() {
       } else {
         // Chapter 5 is the final chapter → Victory
         setPhase("VICTORY");
-        broadcastGlobalState("VICTORY", finalParty, nextInv, sharedStash, nextGold, nextChapter, nextArea, nextMaxArea, [], []);
+        broadcastGlobalState("VICTORY", finalParty, inventory, sharedStash, nextGold, nextChapter, nextArea, nextMaxArea, [], []);
         savePartyProfilesEndRun(finalParty, nextGold);
         return;
       }
     }
 
     setGold(nextGold);
-    setInventory(nextInv);
+    // Note: loot materials are distributed into character personal inventories (finalParty).
+    // The shared `inventory` state is not changed by battle loot.
     setParty(finalParty);
     setArea(finalNextArea);
     setChapter(nextChapter);
@@ -1058,10 +1163,10 @@ export default function App() {
     if (promotes.length > 0) {
       setPendingPromotionChar(promotes[0]);
       setPhase("PROMOTION");
-      broadcastGlobalState("PROMOTION", finalParty, nextInv, sharedStash, nextGold, nextChapter, nextArea, nextMaxArea, [], []);
+      broadcastGlobalState("PROMOTION", finalParty, inventory, sharedStash, nextGold, nextChapter, nextArea, nextMaxArea, [], []);
     } else {
       setPhase("CAMP");
-      broadcastGlobalState("CAMP", finalParty, nextInv, sharedStash, nextGold, nextChapter, nextArea, nextMaxArea, [], []);
+      broadcastGlobalState("CAMP", finalParty, inventory, sharedStash, nextGold, nextChapter, nextArea, nextMaxArea, [], []);
     }
   };
 
@@ -1170,7 +1275,9 @@ export default function App() {
 
     // Spawn enemy group for current chapter/area
     const isBoss = area >= maxArea;
-    const activeEnemies = spawnEnemyGroup(chapter, area, false, isBoss, undefined, way, path);
+    const activeEnemies = isBoss
+      ? spawnEnemyGroup(chapter, area, false, true, undefined, way, path)
+      : spawnFixedEncounter(chapter, area, updatedParty.length, false, way, path);
     setCombatEnemies(activeEnemies);
 
     setPhase("BATTLE");
@@ -1183,10 +1290,12 @@ export default function App() {
     if (shouldForce) {
       setForceShopNext(false);
     }
-    const nextNodes = generateMapNodes(chapter, area + 1, area + 1 >= maxArea, shouldForce);
+    const nextArea = area + 1;
+    const nextNodes = generateMapNodes(chapter, nextArea, nextArea >= maxArea, shouldForce);
     setAvailableNodes(nextNodes);
     setPhase("MAP");
-    broadcastGlobalState("MAP", party, inventory, sharedStash, gold, chapter, area, maxArea, nextNodes, []);
+    // Broadcast with the advanced area value, not the stale closure
+    broadcastGlobalState("MAP", party, inventory, sharedStash, gold, chapter, nextArea, maxArea, nextNodes, []);
   };
 
   const resetGameEnvironment = () => {
@@ -1194,11 +1303,20 @@ export default function App() {
     setParty([]);
     setInventory([]);
     setSharedStash([]);
-    setGold(150);
+    setGold(50);
+    setStashGold(0);
     setChapter(1);
     setArea(0);
+    setMaxArea(8);
     setWay(1);
     setPath(1);
+    setCombatEnemies([]);
+    setAvailableNodes([]);
+    setForceShopNext(false);
+    setActiveStoryIndex(null);
+    setActiveShopOpen(false);
+    eventCombatRef.current = false;
+    hasSavedEndRunRef.current = false;
   };
 
   const getChapterBgClass = () => {
@@ -1311,6 +1429,7 @@ export default function App() {
             setActiveStoryIndex={handleSetStoryIndex}
             activeShopOpen={activeShopOpen}
             setActiveShopOpen={handleSetShopOpen}
+            activeShopWares={activeShopWares}
             p2pMode={p2pMode}
             votes={votes}
             countdown={countdown}
@@ -1337,6 +1456,11 @@ export default function App() {
                 <p className="text-sm text-slate-400 text-center mb-6">
                   The forest is behind you. Two paths stretch ahead. Which will you take?
                 </p>
+                {p2pMode === "multiplayer" && party.length > 0 && myPlayerId !== party[0].id ? (
+                  <div className="text-center p-4 bg-slate-800 rounded-lg text-amber-300 animate-pulse font-mono">
+                    Waiting for Host ({party[0].name}) to choose a path...
+                  </div>
+                ) : (
                 <div className="grid grid-cols-2 gap-4">
                   <button
                     onClick={() => {
@@ -1379,6 +1503,7 @@ export default function App() {
                     <div className="mt-3 text-[10px] text-red-600/60">Difficulty: ★★☆☆☆</div>
                   </button>
                 </div>
+                )}
               </>
             ) : (
               // After Chapter 3: Choose Path (Branch)
@@ -1389,6 +1514,12 @@ export default function App() {
                 <p className="text-sm text-slate-400 text-center mb-6">
                   The trail splits once more. Your choice will determine the final leg of the journey.
                 </p>
+                {p2pMode === "multiplayer" && party.length > 0 && myPlayerId !== party[0].id ? (
+                  <div className="text-center p-4 bg-slate-800 rounded-lg text-amber-300 animate-pulse font-mono">
+                    Waiting for Host ({party[0].name}) to choose a path...
+                  </div>
+                ) : (
+                <>
                 {way === 1 ? (
                   <div className="grid grid-cols-2 gap-4">
                     <button
@@ -1471,6 +1602,8 @@ export default function App() {
                       <div className="mt-3 text-[10px] text-orange-600/60">Difficulty: ★★★★☆</div>
                     </button>
                   </div>
+                )}
+                </>
                 )}
               </>
             )}

@@ -1330,7 +1330,7 @@ export function spawnEnemyGroup(
       aiType: "boss",
       xpAwarded: bossTemplate.xpAwarded,
       goldAwarded: bossTemplate.goldAwarded,
-      dropMaterials: bossTemplate.dropMaterials || [],
+      dropMaterials: (bossTemplate.dropMaterials || []).map(id => ({ id, quantity: 1 })),
     });
     return result;
   }
@@ -1352,12 +1352,14 @@ export function spawnEnemyGroup(
 
     let placementFound = false;
     let x = 1, y = 2;
-    while (!placementFound) {
+    let placeTries = 0;
+    while (!placementFound && placeTries < 20) {
       x = Math.floor(Math.random() * 3) + 1;
       y = Math.floor(Math.random() * 3) + 1;
       if (!result.some(e => e.gridX === x && e.gridY === y)) {
         placementFound = true;
       }
+      placeTries++;
     }
 
     result.push({
@@ -1377,7 +1379,125 @@ export function spawnEnemyGroup(
       aiType: template.aiType,
       xpAwarded: Math.round(template.xpAwarded * progressionScaler * (isElite ? 1.4 : 1.0)),
       goldAwarded: Math.round(template.goldAwarded * progressionScaler * (isElite ? 1.4 : 1.0)),
-      dropMaterials: template.dropMaterials || [],
+      dropMaterials: (template.dropMaterials || []).map(id => ({ id, quantity: 1 })),
+    });
+  }
+
+  return result;
+}
+
+// ==================== FIXED ENCOUNTER SYSTEM ====================
+
+/**
+ * Monster count per stage index (0-based):
+ *   Stage 1 (area 0) → 1 mon
+ *   Stage 2 (area 1) → 2 mons
+ *   Stage 3 (area 2) → 2 mons
+ *   Stage 4 (area 3) → 2 mons
+ *   Stage 5 (area 4) → 3 mons
+ *   Stage 6 (area 5) → 3 mons
+ *   Stage 7 (area 6) → 4 mons
+ */
+const STAGE_MONSTER_COUNTS = [1, 2, 2, 2, 3, 3, 4];
+
+/**
+ * Party-size stat multiplier — based on number of characters (not players).
+ * 1 character → 60%, 2 → 70%, 3 → 80%, 4 → 90%, 5+ → 100%
+ */
+function getPartySizeMultiplier(partySize: number): number {
+  if (partySize <= 1) return 0.60;
+  if (partySize === 2) return 0.70;
+  if (partySize === 3) return 0.80;
+  if (partySize === 4) return 0.90;
+  return 1.00;
+}
+
+/**
+ * Gradual per-stage stat progression multiplier (fixed, not random).
+ * Each stage is 5% stronger than the last.
+ */
+function getStageProgressionMultiplier(area: number): number {
+  const table = [1.00, 1.05, 1.10, 1.15, 1.20, 1.25, 1.30];
+  return table[Math.min(area, table.length - 1)];
+}
+
+/**
+ * Spawns a fixed encounter for a given chapter/area/party-size.
+ * Enemy types are randomly chosen from the chapter pool for variety,
+ * but counts and stats are fixed and balanced.
+ */
+export function spawnFixedEncounter(
+  chapter: number,
+  area: number,
+  partySize: number,
+  isElite: boolean,
+  way: number = 1,
+  path: number = 1
+): Enemy[] {
+  const result: Enemy[] = [];
+  const list = getEnemyPool(chapter, way, path);
+
+  const baseCount = STAGE_MONSTER_COUNTS[Math.min(area, STAGE_MONSTER_COUNTS.length - 1)];
+  // Elites get one extra monster
+  const count = isElite ? Math.min(baseCount + 1, 5) : baseCount;
+
+  const partySizeMult = getPartySizeMultiplier(partySize);
+  const stageMult = getStageProgressionMultiplier(area);
+  const eliteStatMult = isElite ? 1.30 : 1.00;
+
+  // Prevent infinite loop if pool is smaller than needed
+  const usedIndices: number[] = [];
+
+  for (let i = 0; i < count; i++) {
+    // Pick a random enemy from the pool (allow repeats if pool is too small)
+    let tIndex = Math.floor(Math.random() * list.length);
+    if (list.length >= count) {
+      // Try to avoid duplicates for more variety
+      let attempts = 0;
+      while (usedIndices.includes(tIndex) && attempts < 10) {
+        tIndex = Math.floor(Math.random() * list.length);
+        attempts++;
+      }
+    }
+    usedIndices.push(tIndex);
+    const template = list[tIndex];
+
+    const combined = partySizeMult * stageMult * eliteStatMult;
+    const enemyHp  = Math.round(template.maxHp * combined);
+    const enemyAtk = Math.round(template.atk  * combined);
+    const enemyDef = Math.round(template.def  * (isElite ? 1.20 : 1.00));
+
+    // Random grid placement (no duplicates)
+    let placementFound = false;
+    let x = 1, y = 2;
+    let placeTries = 0;
+    while (!placementFound && placeTries < 20) {
+      x = Math.floor(Math.random() * 3) + 1;
+      y = Math.floor(Math.random() * 3) + 1;
+      if (!result.some(e => e.gridX === x && e.gridY === y)) {
+        placementFound = true;
+      }
+      placeTries++;
+    }
+
+    result.push({
+      id: `enemy_${Date.now()}_${i}`,
+      name: (isElite ? "E- " : "") + template.name,
+      maxHp: enemyHp,
+      hp: enemyHp,
+      atk: enemyAtk,
+      def: enemyDef,
+      critChance: template.critChance,
+      dodgeChance: template.dodgeChance,
+      accuracy: template.accuracy,
+      avatarUrl: template.avatarUrl,
+      gridX: x,
+      gridY: y,
+      statusEffects: [],
+      aiType: template.aiType,
+      xpAwarded: Math.round(template.xpAwarded * stageMult * eliteStatMult),
+      goldAwarded: Math.round(template.goldAwarded * stageMult * eliteStatMult),
+      dropMaterials: (template.dropMaterials || []).map(id => ({ id, quantity: 1 })),
     });
   }
 

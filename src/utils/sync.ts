@@ -9,11 +9,20 @@ class SyncBridge {
   private roomId: string = "";
   private onMessageCallbacks: Map<string, (msg: any) => void> = new Map();
   private isConnecting: boolean = false;
+  private pingInterval: number | null = null;
+  private pongTimeout: number | null = null;
+  private reconnectAttempts: number = 0;
+  private readonly maxReconnectAttempts: number = 10;
+  // Store active channel/callback so reconnects always use current values, not stale closures
+  private activeChannelName: string = "";
+  private activeOnMessage: ((msg: any) => void) | null = null;
 
   constructor() {}
 
   init(roomId: string, channelName: string, onMessage: (msg: any) => void) {
     this.roomId = roomId;
+    this.activeChannelName = channelName;
+    this.activeOnMessage = onMessage;
     this.onMessageCallbacks.set(channelName, onMessage);
 
     // 1. Setup local BroadcastChannel for tab-to-tab
@@ -41,6 +50,7 @@ class SyncBridge {
         if (this.ws.url === wsUrl && (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING)) {
           return;
         }
+        this.clearKeepAlive();
         this.ws.close();
         this.ws = null;
       }
@@ -51,12 +61,18 @@ class SyncBridge {
 
       socket.onopen = () => {
         this.isConnecting = false;
+        this.reconnectAttempts = 0;
         console.log("WebSocket Sync Connection Established");
+        this.setupKeepAlive();
       };
 
       socket.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
+          if (data.type === "PONG") {
+            this.handlePong();
+            return;
+          }
           if (data.room === this.roomId) {
             const callback = this.onMessageCallbacks.get(data.channel);
             if (callback) {
@@ -74,13 +90,21 @@ class SyncBridge {
 
       socket.onclose = () => {
         this.isConnecting = false;
+        this.clearKeepAlive();
         this.ws = null;
-        console.log("Sync socket closed. Retrying in 3s...");
+        this.reconnectAttempts++;
+        if (this.reconnectAttempts > this.maxReconnectAttempts) {
+          console.error(`Sync socket closed after ${this.maxReconnectAttempts} retry attempts. Giving up.`);
+          return;
+        }
+        const delay = Math.min(3000 * Math.pow(2, this.reconnectAttempts - 1), 30000);
+        console.log(`Sync socket closed. Retrying in ${delay / 1000}s... (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
         setTimeout(() => {
-          if (this.roomId === roomId) {
-            this.init(roomId, channelName, onMessage);
+          // Always reconnect using current stored values, not the stale closure
+          if (this.activeChannelName && this.activeOnMessage) {
+            this.init(this.roomId, this.activeChannelName, this.activeOnMessage);
           }
-        }, 3000);
+        }, delay);
       };
     }
   }
@@ -95,6 +119,39 @@ class SyncBridge {
     // Send over socket
     if (this.ws && this.ws.readyState === WebSocket.OPEN && this.roomId && this.roomId !== "LOCAL") {
       this.ws.send(JSON.stringify({ room: this.roomId, channel: channelName, message }));
+    }
+  }
+
+  private setupKeepAlive() {
+    this.clearKeepAlive();
+    this.pingInterval = window.setInterval(() => {
+      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+        this.ws.send(JSON.stringify({ type: "PING", room: this.roomId }));
+        this.pongTimeout = window.setTimeout(() => {
+          if (this.ws) {
+            console.warn("WebSocket ping timeout, closing connection...");
+            this.ws.close();
+          }
+        }, 5000);
+      }
+    }, 15000);
+  }
+
+  private handlePong() {
+    if (this.pongTimeout !== null) {
+      clearTimeout(this.pongTimeout);
+      this.pongTimeout = null;
+    }
+  }
+
+  private clearKeepAlive() {
+    if (this.pingInterval !== null) {
+      clearInterval(this.pingInterval);
+      this.pingInterval = null;
+    }
+    if (this.pongTimeout !== null) {
+      clearTimeout(this.pongTimeout);
+      this.pongTimeout = null;
     }
   }
 
@@ -127,7 +184,9 @@ class SyncBridge {
 
   close() {
     this.roomId = "";
+    this.clearKeepAlive();
     if (this.ws) {
+      this.ws.onclose = null; // Prevent retry loop on explicit close
       this.ws.close();
       this.ws = null;
     }

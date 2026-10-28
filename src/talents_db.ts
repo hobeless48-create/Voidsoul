@@ -10,9 +10,9 @@ export const TALENT_TREES: Record<ClassName, TalentNode[]> = {
     {
       id: "war_t1_iron_skin",
       name: "Iron Skin",
-      description: "Passive. Permanent +15 DEF. Unlocked by default.",
+      description: "Passive. Permanent +3 flat damage reduction. Unlocked by default.",
       cost: 0,
-      flatDef: 15,
+      flatDamageReduction: 3,
       isPassive: true,
       gridX: 2,
       gridY: 12,
@@ -96,9 +96,9 @@ export const TALENT_TREES: Record<ClassName, TalentNode[]> = {
     {
       id: "war_t9_fortress",
       name: "Defensive Stance",
-      description: "Passive. Permanent +20 DEF and +10% Block Chance.",
+      description: "Passive. Permanent +4 flat damage reduction and +10% Block Chance.",
       cost: 1,
-      flatDef: 20,
+      flatDamageReduction: 4,
       isPassive: true,
       gridX: 21,
       gridY: 16,

@@ -138,7 +138,7 @@ export function CampingMenu({
           stats: nextStats,
           unspentPoints: p.unspentPoints - actualAmount,
           allocatedPoints: p.allocatedPoints + actualAmount,
-          maxHp: 80 + nextStats.CON * 12 + (p.level - 1) * 15,
+          maxHp: getDerivedStats({ ...p, stats: nextStats }).maxHp,
         };
       }
       return p;
@@ -210,7 +210,7 @@ export function CampingMenu({
           finalItem.statsBonus = newStatsBonus;
         }
         finalItem.name = `${finalItem.name} [Dwarven +${Math.round((scale - 1) * 100)}%]`;
-        finalItem.id = `${finalItem.id}_dw_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+        finalItem.id = `${finalItem.id}_dw_${activeChar.id}_${Math.round((scale - 1) * 100)}`;
       }
     }
 

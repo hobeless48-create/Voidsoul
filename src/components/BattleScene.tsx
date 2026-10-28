@@ -15,13 +15,22 @@ import {
   Item,
 } from "../types";
 import {
+  getDerivedStats,
   BASE_SKILLS,
   ADVANCED_SKILLS,
   TIER3_SKILLS,
-  getDerivedStats,
   CLASS_AVATARS,
   getBaseClass,
 } from "../skills_db";
+import {
+  applyPercentageDefense,
+  getBaseDamage,
+  getBaseHealing,
+  getCritCalculation,
+  getUnitDodge,
+  getUnitAccuracy,
+  getUnitDef,
+} from "../utils/combatMath";
 import { ITEMS_DATABASE } from "../items_db";
 import { TALENT_TREES } from "../talents_db";
 import { syncBridge } from "../utils/sync";
@@ -34,6 +43,22 @@ import {
   AlertCircle,
   Heart,
 } from "lucide-react";
+
+type FloatingAction = {
+  id: string;
+  actorName: string;
+  skillName: string;
+  actionType: "damage" | "buff" | "debuff" | "heal";
+  x: number; // % from left
+  y: number; // % from top
+};
+
+const ACTION_COLORS: Record<FloatingAction["actionType"], { bg: string; text: string; border: string }> = {
+  damage:  { bg: "#dc2626", text: "#fff", border: "#f87171" },
+  buff:    { bg: "#2563eb", text: "#fff", border: "#60a5fa" },
+  debuff:  { bg: "#ea580c", text: "#fff", border: "#fb923c" },
+  heal:    { bg: "#16a34a", text: "#fff", border: "#4ade80" },
+};
 
 const isTier3Class = (cl: string): boolean => {
   return [
@@ -50,6 +75,25 @@ const isTier3Class = (cl: string): boolean => {
     "Herald of Glory",
     "Entropy Singer",
   ].includes(cl);
+};
+
+export const cloneUnit = <T extends Character | Enemy>(unit: T): T => {
+  const result: any = { ...unit };
+  if ("stats" in unit) result.stats = { ...unit.stats };
+  if ("equipment" in unit) result.equipment = { ...unit.equipment };
+  if ("inventory" in unit && unit.inventory) {
+    result.inventory = unit.inventory.map((i: any) => ({ ...i }));
+  }
+  if (unit.statusEffects) {
+    result.statusEffects = unit.statusEffects.map((se: any) => ({ ...se }));
+  }
+  if (unit.skillCooldowns) {
+    result.skillCooldowns = { ...unit.skillCooldowns };
+  }
+  if ("dropMaterials" in unit && unit.dropMaterials) {
+    result.dropMaterials = [...unit.dropMaterials];
+  }
+  return result as T;
 };
 
 interface BattleSceneProps {
@@ -108,6 +152,7 @@ export function BattleScene({
     Record<string, number>
   >({});
   const [accumulatedGold, setAccumulatedGold] = useState(0);
+  const [floatingActions, setFloatingActions] = useState<FloatingAction[]>([]);
   const [accumulatedMaterials, setAccumulatedMaterials] = useState<
     { id: string; quantity: number }[]
   >([]);
@@ -189,36 +234,7 @@ export function BattleScene({
   const [hoveredUnitId, setHoveredUnitId] = useState<string | null>(null);
   const [infoUnit, setInfoUnit] = useState<Character | Enemy | null>(null);
 
-  // Combat Helpers for accuracy, dodge, and def
-  const getUnitDodge = (unit: Character | Enemy): number => {
-    const hasDodgeBuff = unit.statusEffects.find(
-      (eff) => eff.type === "dodge_up",
-    );
-    const buffVal = hasDodgeBuff ? hasDodgeBuff.value : 0;
-    let finalDodge = 0;
-    if ("stats" in unit) {
-      finalDodge = getDerivedStats(unit).dodgeChance + buffVal;
-    } else {
-      finalDodge = unit.dodgeChance + buffVal;
-    }
-    return Math.min(30, finalDodge);
-  };
-
-  const getUnitAccuracy = (unit: Character | Enemy): number => {
-    if ("stats" in unit) {
-      return getDerivedStats(unit).accuracy;
-    } else {
-      return unit.accuracy !== undefined ? unit.accuracy : 95;
-    }
-  };
-
-  const getUnitDef = (unit: Character | Enemy): number => {
-    if ("stats" in unit) {
-      return getDerivedStats(unit).def;
-    } else {
-      return unit.def;
-    }
-  };
+  // Combat Helpers for accuracy, dodge, and def are now imported from utils/combatMath.ts
 
   const getPrediction = () => {
     if (!hoveredUnitId || !activeTurn || activeTurn.type !== "player")
@@ -321,11 +337,12 @@ export function BattleScene({
     }
 
     const targetDef = getUnitDef(target);
+    const targetFlatDR = "stats" in target ? (getDerivedStats(target).flatDamageReduction || 0) : 0;
     // Apply damage dealt penalty (Fallen debuff on caster)
     const casterFallen = caster.fallenStacks || 0;
     const dmgMultiplier = 1 - casterFallen * 0.25;
 
-    let dmgAfterDef = Math.max(1, dmgNormal - targetDef) * dmgMultiplier;
+    let dmgAfterDef = applyPercentageDefense(dmgNormal, targetDef, targetFlatDR) * dmgMultiplier;
 
     const critDmgBonus = getCritCalculation(caster);
     const critChance = Math.min(
@@ -333,7 +350,7 @@ export function BattleScene({
       5 + caster.stats.DEX * 0.4 + caster.stats.LCK * 0.5,
     );
     let dmgCritAfterDef =
-      Math.max(1, dmgNormal * (critDmgBonus / 100) - targetDef) * dmgMultiplier;
+      applyPercentageDefense(Math.round(dmgNormal * (critDmgBonus / 100)), targetDef, targetFlatDR) * dmgMultiplier;
 
     const minDmg = Math.round(dmgAfterDef * 0.9);
     const maxDmg = Math.round(dmgAfterDef * 1.1);
@@ -383,6 +400,18 @@ export function BattleScene({
         setCombatLogs((prev) => [...prev, ...payload.logs]);
         setBattleState(payload.battleState);
         setInitiativeRolls(payload.initiativeRolls || {});
+
+        // If a client action caused victory/defeat, the host must process the transition
+        if (isHost && payload.battleState === "victory") {
+          const loot = payload.loot || { gold: 0, materials: [] };
+          setTimeout(() => {
+            onVictory(payload.party.filter((p: Character) => p.hp > 0 && !p.isSummon), loot);
+          }, 500);
+        } else if (isHost && payload.battleState === "defeat") {
+          setTimeout(() => {
+            onDefeat();
+          }, 500);
+        }
       }
     });
 
@@ -402,6 +431,7 @@ export function BattleScene({
     stateCheck: "ongoing" | "victory" | "defeat",
     nextRolls: Record<string, number> = initiativeRolls,
     isPlayerAction: boolean = false,
+    combatLoot?: { gold: number; materials: { id: string; quantity: number }[] }
   ) => {
     if (p2pMode === "multiplayer" && roomId) {
       const isHost = myPlayerId === party[0]?.id;
@@ -418,6 +448,7 @@ export function BattleScene({
           logs: newLogs,
           battleState: stateCheck,
           initiativeRolls: nextRolls,
+          loot: combatLoot,
         },
       });
     }
@@ -539,7 +570,21 @@ export function BattleScene({
       }, 1200);
       return () => clearTimeout(timer);
     }
-  }, [currentTurnIdx, initiativeOrder]);
+  }, [currentTurnIdx, initiativeOrder, battleState, activeTurn]);
+
+  const pushFloatingAction = (
+    actorName: string,
+    skillName: string,
+    actionType: FloatingAction["actionType"],
+  ) => {
+    const id = "fa_" + Date.now() + Math.random().toString(36).substr(2, 3);
+    const x = 30 + Math.random() * 40; // 30-70% from left
+    const y = 10 + Math.random() * 30; // 10-40% from top
+    setFloatingActions((prev) => [...prev, { id, actorName, skillName, actionType, x, y }]);
+    setTimeout(() => {
+      setFloatingActions((prev) => prev.filter((f) => f.id !== id));
+    }, 2000);
+  };
 
   const executeEnemyAI = (enemyParam: Enemy) => {
     // Check alive players first using original state
@@ -551,20 +596,8 @@ export function BattleScene({
     }
 
     // 1. Deep clone state arrays to avoid reference mutations
-    const nextEnemies = combatEnemies.map((e) => ({
-      ...e,
-      statusEffects: e.statusEffects.map((se) => ({ ...se })),
-      skillCooldowns: e.skillCooldowns ? { ...e.skillCooldowns } : undefined,
-      dropMaterials: e.dropMaterials ? [...e.dropMaterials] : [],
-    }));
-    const nextParty = combatParty.map((p) => ({
-      ...p,
-      stats: { ...p.stats },
-      equipment: { ...p.equipment },
-      statusEffects: p.statusEffects.map((se) => ({ ...se })),
-      skillCooldowns: p.skillCooldowns ? { ...p.skillCooldowns } : undefined,
-      inventory: p.inventory ? p.inventory.map((i) => ({ ...i })) : [],
-    }));
+    const nextEnemies = combatEnemies.map(cloneUnit);
+    const nextParty = combatParty.map(cloneUnit);
 
     // 2. Resolve the active enemy and targets from cloned lists
     const enemy = nextEnemies.find((e) => e.id === enemyParam.id)!;
@@ -763,6 +796,8 @@ export function BattleScene({
         effectDesc = "inflicting Crippled (deals -25% dmg)";
       }
 
+      pushFloatingAction(enemy.name, skillName, "debuff");
+
       pendingLogs = [
         ...pendingLogs,
         ...addLog(
@@ -785,7 +820,7 @@ export function BattleScene({
         baseDmg = Math.round(baseDmg * 0.75);
       }
 
-      let dmg = Math.max(1, baseDmg - targetDef);
+      let dmg = applyPercentageDefense(baseDmg, targetDef, statsDerived.flatDamageReduction || 0);
 
       // Target is Vulnerable check
       const targetVulnerable = target.statusEffects.some(
@@ -886,6 +921,8 @@ export function BattleScene({
       else if (enemy.name.includes("Grave Sentry")) skillName = "Tomb Aegis";
       else if (enemy.name.includes("Gargoyle")) skillName = "Stone Form";
 
+      pushFloatingAction(enemy.name, skillName, "buff");
+
       pendingLogs = [
         ...pendingLogs,
         ...addLog(
@@ -915,6 +952,8 @@ export function BattleScene({
         else if (enemy.name.includes("Dread-Knight"))
           skillName = "Unholy Strike";
 
+        pushFloatingAction(enemy.name, skillName, "damage");
+
         pendingLogs = [
           ...pendingLogs,
           ...addLog(
@@ -936,7 +975,7 @@ export function BattleScene({
         }
 
         const statsDerived = getDerivedStats(target);
-        let dmg = Math.max(1, baseDmg - statsDerived.def);
+        let dmg = applyPercentageDefense(baseDmg, statsDerived.def, statsDerived.flatDamageReduction || 0, target);
 
         // Target is Vulnerable check
         const targetVulnerable = target.statusEffects.some(
@@ -1027,6 +1066,8 @@ export function BattleScene({
         else if (enemy.name.includes("Hellhound")) skillName = "Brutal Leap";
         else if (enemy.name.includes("Timberwolf")) skillName = "Pack Frenzy";
 
+        pushFloatingAction(enemy.name, skillName, "damage");
+
         pendingLogs = [
           ...pendingLogs,
           ...addLog(
@@ -1049,7 +1090,7 @@ export function BattleScene({
 
         const statsDerived = getDerivedStats(target);
         const targetDef = Math.round(statsDerived.def * 0.6); // Ignores 40% DEF
-        let dmg = Math.max(1, baseDmg - targetDef);
+        let dmg = applyPercentageDefense(baseDmg, targetDef, statsDerived.flatDamageReduction || 0);
 
         // Target is Vulnerable check
         const targetVulnerable = target.statusEffects.some(
@@ -1121,6 +1162,12 @@ export function BattleScene({
       }
     }
 
+    // Fallback: basic attack for non-boss enemies that didn't trigger a special skill
+    if (enemy.aiType !== "boss") {
+      resolvePhysicalHit(enemy, target, pendingLogs, nextEnemies, nextParty);
+      return;
+    }
+
     // Special boss AI with phase mechanics
     if (enemy.aiType === "boss") {
       const hpPercent = enemy.hp / enemy.maxHp;
@@ -1138,50 +1185,25 @@ export function BattleScene({
 
       // Phase 2 trigger at 90% HP for Ryu Jin
       if (isRyuJin && hpPercent < 0.90 && hpPercent > 0.50 && Math.random() < 0.35) {
-        // Ryu Jin phase 2: Sky Dragon's Wrath - AoE attack
+        // Ryu Jin phase 2: Sky Dragon's Wrath — AoE debuff storm (no direct damage)
         let skillName = "Sky Dragon's Wrath";
+        pushFloatingAction(enemy.name, skillName, "debuff");
         pendingLogs = [
           ...pendingLogs,
-          ...addLog(`🐉 ${enemy.name} roars and unleashes [${skillName}]!`, "system"),
+          ...addLog(`🐉 ${enemy.name} roars from the heavens! [${skillName}] unleashes a storm of debilitation!`, "system"),
         ];
 
-        alivePlayers.forEach((p) => {
-          let baseDmg = Math.round(enemy.atk * 1.2 * atkMultiplier);
-          const randomFactor = 0.9 + Math.random() * 0.2;
-          baseDmg = Math.round(baseDmg * randomFactor);
-          const statsDerived = getDerivedStats(p);
-          let dmg = Math.max(1, baseDmg - Math.round(statsDerived.def * 0.5));
-
-          // Apply shield
-          const shieldBuff = p.statusEffects.find((eff) => eff.type === "shield");
-          if (shieldBuff && shieldBuff.value > 0) {
-            if (shieldBuff.value >= dmg) {
-              shieldBuff.value -= dmg;
-              dmg = 0;
-            } else {
-              dmg -= shieldBuff.value;
-              shieldBuff.value = 0;
-            }
-          }
-
-          if (dmg > 0) {
-            p.hp = Math.max(0, p.hp - dmg);
-            pendingLogs = [
-              ...pendingLogs,
-              ...addLog(`💥 ${p.name} takes ${dmg} damage from Sky Dragon's Wrath!`, "damage"),
-            ];
-          }
-        });
-
-        // Apply daze to all players
+        // Apply heavy debuffs to all alive players
         alivePlayers.forEach((p) => {
           if (p.hp > 0) {
+            p.statusEffects.push({ type: "vulnerable" as any, value: 1, duration: 3 });
+            p.statusEffects.push({ type: "crippled" as any, value: 1, duration: 3 });
             p.statusEffects.push({ type: "stagger" as any, value: 1, duration: 1 });
           }
         });
         pendingLogs = [
           ...pendingLogs,
-          ...addLog(`🌀 All players are dazed by the dragon's roar!`, "status"),
+          ...addLog(`🌀 The Sky Dragon's roar weakens and staggers the entire party! (Vulnerable + Crippled + Stagger)`, "status"),
         ];
 
         const updatedEnemies = nextEnemies.map((e) => (e.id === enemy.id ? enemy : e));
@@ -1194,41 +1216,21 @@ export function BattleScene({
       // Ryu Jin phase 3 below 50% HP
       if (isRyuJin && hpPercent < 0.50 && Math.random() < 0.4) {
         let skillName = "Temporal Storm";
+        pushFloatingAction(enemy.name, skillName, "debuff");
         pendingLogs = [
           ...pendingLogs,
-          ...addLog(`🌀 ${enemy.name} casts [${skillName}]! Time itself bends!`, "system"),
+          ...addLog(`🌀 ${enemy.name} casts [${skillName}]! Time itself bends around ${target.name}!`, "system"),
         ];
 
-        // Single target massive damage + confusion
-        let baseDmg = Math.round(enemy.atk * 2.0 * atkMultiplier);
-        const randomFactor = 0.9 + Math.random() * 0.2;
-        baseDmg = Math.round(baseDmg * randomFactor);
-        const statsDerived = getDerivedStats(target);
-        let dmg = Math.max(1, baseDmg - Math.round(statsDerived.def * 0.3));
-
-        // Apply shield
-        const shieldBuff = target.statusEffects.find((eff) => eff.type === "shield");
-        if (shieldBuff && shieldBuff.value > 0) {
-          if (shieldBuff.value >= dmg) {
-            shieldBuff.value -= dmg;
-            dmg = 0;
-          } else {
-            dmg -= shieldBuff.value;
-            shieldBuff.value = 0;
-          }
-        }
-
-        if (dmg > 0) {
-          target.hp = Math.max(0, target.hp - dmg);
+        // Debuff-only: stun + stagger + energy drain (no direct damage)
+        if (target.hp > 0) {
+          target.statusEffects.push({ type: "stun" as any, value: 1, duration: 1 });
+          target.statusEffects.push({ type: "stagger" as any, value: 1, duration: 2 });
+          target.energy = 0;
           pendingLogs = [
             ...pendingLogs,
-            ...addLog(`💥 [Temporal Storm] hits ${target.name} for ${dmg} damage!`, "damage"),
+            ...addLog(`⏳ ${target.name} is frozen in time! (Stunned + Staggered + Energy drained)`, "status"),
           ];
-        }
-
-        if (target.hp > 0) {
-          target.statusEffects.push({ type: "stagger" as any, value: 1, duration: 2 });
-          pendingLogs = [...pendingLogs, ...addLog(`🌀 ${target.name} is disoriented!`, "status")];
         }
 
         const updatedEnemies = nextEnemies.map((e) => (e.id === enemy.id ? enemy : e));
@@ -1315,6 +1317,8 @@ export function BattleScene({
         else if (isSlaad) skillName = "Void Rend";
         else if (isVerath) skillName = "Demon's Bite";
 
+        pushFloatingAction(enemy.name, skillName, "damage");
+
         pendingLogs = [
           ...pendingLogs,
           ...addLog(`⚔️ ${enemy.name} uses [${skillName}] on ${target.name}!`, "system"),
@@ -1328,7 +1332,7 @@ export function BattleScene({
         if (enemyCrippled) baseDmg = Math.round(baseDmg * 0.75);
 
         const statsDerived = getDerivedStats(target);
-        let dmg = Math.max(1, baseDmg - statsDerived.def);
+        let dmg = applyPercentageDefense(baseDmg, statsDerived.def, statsDerived.flatDamageReduction || 0, target);
 
         const targetVulnerable = target.statusEffects.some((eff) => eff.type === "vulnerable");
         if (targetVulnerable) dmg = Math.round(dmg * 1.5);
@@ -1368,12 +1372,31 @@ export function BattleScene({
         return;
       }
 
-      // Fallback to basic attack for bosses
+      // Ryu Jin: debuff-only fallback instead of direct damage
+      if (isRyuJin) {
+        const debuffType = Math.random() < 0.5 ? "crippled" : "vulnerable";
+        const debuffName = debuffType === "crippled" ? "Crippled" : "Vulnerable";
+        pushFloatingAction(enemy.name, `Weakening Mist (${debuffName})`, "debuff");
+        if (target.hp > 0) {
+          target.statusEffects.push({ type: debuffType as any, value: 1, duration: 2 });
+        }
+        pendingLogs = [
+          ...pendingLogs,
+          ...addLog(`🐉 ${enemy.name} exhales a weakening mist! ${target.name} is ${debuffName}!`, "status"),
+        ];
+        const updatedEnemies = nextEnemies.map((e) => (e.id === enemy.id ? enemy : e));
+        const updatedParty = nextParty.map((p) => (p.id === target.id ? target : p));
+        setCombatEnemies(updatedEnemies);
+        setCombatParty(updatedParty);
+        advanceTurn(updatedEnemies, pendingLogs, updatedParty);
+        return;
+      }
+
+      // Fallback to basic attack for other bosses
       resolvePhysicalHit(enemy, target, pendingLogs, nextEnemies, nextParty);
       return;
     }
   };
-
   const resolvePhysicalHit = (
     attacker: Enemy,
     target: Character,
@@ -1381,6 +1404,7 @@ export function BattleScene({
     existingEnemiesList: Enemy[],
     existingPartyList: Character[] = combatParty,
   ) => {
+    pushFloatingAction(attacker.name, attacker.aiType === "boss" ? "Boss Strike" : "Basic Attack", "damage");
     let logs = [...pendingLogs];
 
     // Check accuracy vs dodge
@@ -1485,8 +1509,7 @@ export function BattleScene({
     const blockRoll = Math.random() * 100;
     const isBlocked = blockRoll < targetBlock;
 
-    let finalDef = statsDerived.def;
-    let dmg = Math.max(1, baseDmg - finalDef);
+    let dmg = applyPercentageDefense(baseDmg, statsDerived.def, statsDerived.flatDamageReduction || 0, target);
     if (isBlocked) {
       dmg = Math.round(dmg * 0.5);
       logs = [
@@ -1537,8 +1560,8 @@ export function BattleScene({
       ];
     }
 
-    // war_t9_thorns: Whenever Warrior is struck by a physical attack, deal 20% CON damage back to the attacker.
-    if (target.unlockedTalents?.includes("war_t9_thorns") && dmg > 0) {
+    // war_t9_fortress: Whenever Warrior is struck by a physical attack, deal 20% CON damage back to the attacker.
+    if (target.unlockedTalents?.includes("war_t9_fortress") && dmg > 0) {
       const thornsDmg = Math.max(1, Math.round(target.stats.CON * 0.2));
       attacker.hp = Math.max(0, attacker.hp - thornsDmg);
       logs = [
@@ -1625,8 +1648,22 @@ export function BattleScene({
     nextLogs: CombatLog[] = [],
     nextParty: Character[] = [],
   ) => {
-    const freshParty = nextParty.length > 0 ? nextParty : combatParty;
-    const freshEnemies = nextEnemies.length > 0 ? nextEnemies : combatEnemies;
+    let freshParty = nextParty.length > 0 ? nextParty : combatParty;
+    let freshEnemies = nextEnemies.length > 0 ? nextEnemies : combatEnemies;
+
+    // Clean up depleted shield effects (value <= 0)
+    freshParty = freshParty.map((p) => ({
+      ...p,
+      statusEffects: p.statusEffects.filter(
+        (eff) => !(eff.type === "shield" && eff.value <= 0),
+      ),
+    }));
+    freshEnemies = freshEnemies.map((e) => ({
+      ...e,
+      statusEffects: e.statusEffects.filter(
+        (eff) => !(eff.type === "shield" && eff.value <= 0),
+      ),
+    }));
 
     // Detect newly dead enemies by comparing combatEnemies vs freshEnemies
     const newlyDeadEnemies = combatEnemies.filter((prevEnemy) => {
@@ -1808,10 +1845,13 @@ export function BattleScene({
                 }
               }
 
+              const newMaxHp = getDerivedStats({ ...p, level: nextLevel }).maxHp;
               return {
                 ...p,
                 level: nextLevel,
                 xp: nextXp,
+                maxHp: newMaxHp,
+                hp: Math.min(newMaxHp, p.hp + (newMaxHp - (p.maxHp || getDerivedStats(p).maxHp))),
                 unspentPoints: p.unspentPoints + extraPoints,
                 talentPoints: nextTalentPoints,
               };
@@ -2042,6 +2082,29 @@ export function BattleScene({
       (p) => p.hp > 0 && !p.isSummon,
     );
 
+    // Ryu Jin bluff mechanic: auto-defeat if party deals >= 10,000 damage total
+    const ryuJin = aliveEnemies.find((e) => e.name.includes("Ryu Jin"));
+    if (ryuJin && (100000 - ryuJin.hp >= 10000)) {
+      nextLogs = [
+        ...nextLogs,
+        {
+          id: "ryujin_defeat_" + Date.now(),
+          text: "🐉 The Sky Dragon, overwhelmed by relentless assault, concedes defeat! 'You have proven your strength, mortals...'",
+          type: "system",
+          timestamp: new Date().toLocaleTimeString(),
+        },
+      ];
+      if ((window as any).showNotification) {
+        (window as any).showNotification("🐉 Ryu Jin concedes! You have proven your might!", "success");
+      }
+      // Set all enemies as dead to trigger the normal victory flow
+      const allDeadEnemies = freshEnemies.map((e) => ({ ...e, hp: 0 }));
+      setCombatEnemies(allDeadEnemies);
+      setCombatParty(updatedPartyList);
+      advanceTurn(allDeadEnemies, nextLogs, updatedPartyList);
+      return;
+    }
+
     if (aliveEnemies.length === 0) {
       // Process fallen characters and award survival talent points to survivors
       const finalParty = updatedPartyList
@@ -2088,6 +2151,8 @@ export function BattleScene({
           currentTurnIdx,
           nextLogs,
           "defeat",
+          initiativeRolls,
+          wasPlayerActionRef.current
         );
         onDefeat();
         return;
@@ -2096,6 +2161,7 @@ export function BattleScene({
       setBattleState("victory");
       const finalGold = accumulatedGold + goldEarned;
       const finalMaterials = [...localAccumulatedMats];
+      const combatLoot = { gold: finalGold, materials: finalMaterials };
 
       broadcastCombatState(
         finalParty,
@@ -2105,8 +2171,15 @@ export function BattleScene({
         currentTurnIdx,
         nextLogs,
         "victory",
+        initiativeRolls,
+        wasPlayerActionRef.current,
+        combatLoot
       );
-      onVictory(finalParty, { gold: finalGold, materials: finalMaterials });
+      
+      const isHost = (p2pMode as string) === "solo" || myPlayerId === party[0]?.id;
+      if (isHost || (p2pMode as string) === "solo") {
+        onVictory(finalParty, combatLoot);
+      }
       return;
     }
 
@@ -2120,8 +2193,13 @@ export function BattleScene({
         currentTurnIdx,
         nextLogs,
         "defeat",
+        initiativeRolls,
+        wasPlayerActionRef.current
       );
-      onDefeat();
+      const isHost = (p2pMode as string) === "solo" || myPlayerId === party[0]?.id;
+      if (isHost || (p2pMode as string) === "solo") {
+        onDefeat();
+      }
       return;
     }
 
@@ -2336,13 +2414,9 @@ export function BattleScene({
   };
 
   const executeSummonPetTurn = (pet: Character, currentEnemies: Enemy[]) => {
+    pushFloatingAction(pet.name, "Familiar Attack", "damage");
     // 1. Clone nextEnemiesList to avoid mutating React state in place
-    const nextEnemies = currentEnemies.map((e) => ({
-      ...e,
-      statusEffects: e.statusEffects.map((se) => ({ ...se })),
-      skillCooldowns: e.skillCooldowns ? { ...e.skillCooldowns } : undefined,
-      dropMaterials: e.dropMaterials ? [...e.dropMaterials] : [],
-    }));
+    const nextEnemies = currentEnemies.map(cloneUnit);
 
     // Action pets target random enemies automatically
     const aliveEnemies = nextEnemies.filter((e) => e.hp > 0);
@@ -2372,6 +2446,7 @@ export function BattleScene({
 
   // Turn choice action: FOCUS
   const handleFocus = (chargerParam: Character) => {
+    pushFloatingAction(chargerParam.name, "Focus", "buff");
     let logs = [
       ...addLog(
         `💤 ${chargerParam.name} focuses! Absorbs raw combat mana.`,
@@ -2379,10 +2454,7 @@ export function BattleScene({
       ),
     ];
 
-    const charger = {
-      ...chargerParam,
-      statusEffects: chargerParam.statusEffects.map((se) => ({ ...se })),
-    };
+    const charger = cloneUnit(chargerParam);
 
     charger.energy = Math.min(charger.maxEnergy, charger.energy + 2);
     // Gains light temporary shield on focus
@@ -2425,17 +2497,15 @@ export function BattleScene({
     const item = ITEMS_DATABASE[itemId];
     if (!item) return;
 
+    const potionType: FloatingAction["actionType"] =
+      itemId === "energy_brew" ? "buff" : "heal";
+    pushFloatingAction(chargerParam.name, item.name, potionType);
+
     let logs = [
       ...addLog(`🧪 ${chargerParam.name} consumes ${item.name}!`, "info"),
     ];
 
-    const charger = {
-      ...chargerParam,
-      statusEffects: chargerParam.statusEffects.map((se) => ({ ...se })),
-      inventory: chargerParam.inventory
-        ? chargerParam.inventory.map((i) => ({ ...i }))
-        : [],
-    };
+    const charger = cloneUnit(chargerParam);
 
     // Apply potion effects
     if (itemId === "minor_heal") {
@@ -2518,20 +2588,8 @@ export function BattleScene({
     targetId: string,
   ) => {
     // 1. Deep copy nextEnemiesList and nextPartyList to avoid mutating React state references directly
-    let nextEnemiesList = combatEnemies.map((e) => ({
-      ...e,
-      statusEffects: e.statusEffects.map((se) => ({ ...se })),
-      skillCooldowns: e.skillCooldowns ? { ...e.skillCooldowns } : undefined,
-      dropMaterials: e.dropMaterials ? [...e.dropMaterials] : [],
-    }));
-    let nextPartyList = combatParty.map((p) => ({
-      ...p,
-      stats: { ...p.stats },
-      equipment: { ...p.equipment },
-      statusEffects: p.statusEffects.map((se) => ({ ...se })),
-      skillCooldowns: p.skillCooldowns ? { ...p.skillCooldowns } : undefined,
-      inventory: p.inventory ? p.inventory.map((i) => ({ ...i })) : [],
-    }));
+    let nextEnemiesList = combatEnemies.map(cloneUnit);
+    let nextPartyList = combatParty.map(cloneUnit);
 
     // 2. Resolve caster, enemyTarget, and allyTarget copies
     const caster = nextPartyList.find((p) => p.id === casterParam.id)!;
@@ -2550,13 +2608,40 @@ export function BattleScene({
 
     let logs = [...addLog(`✨ ${caster.name} casts [${skill.name}]!`, "info")];
     caster.energy -= skill.cost;
+
+    if (caster.unlockedTalents?.includes("mag_t8_overload") && skill.cost > 0 && Math.random() < 0.25) {
+      caster.energy = Math.min(caster.maxEnergy, caster.energy + 1);
+      logs = [...logs, ...addLog(`⚡ Elemental Overload refunds 1 Energy!`, "status")];
+    }
+    
+    if (skill.id === "mag_mana") {
+      let energyGain = 2;
+      if (caster.unlockedTalents?.includes("mag_t4_surge")) {
+        energyGain = 3;
+      }
+      caster.energy = Math.min(caster.maxEnergy, caster.energy + energyGain);
+      logs = [...logs, ...addLog(`⚡ Mana Flow grants +${energyGain} Energy!`, "status")];
+    }
+
+    // Determine action type for floating box
+    const faType: FloatingAction["actionType"] = skill.healingMultiplier ? "heal"
+      : skill.effect === "shield" || skill.effect === "guarding" || skill.effect === "regen" || skill.effect === "multiplier" || skill.effect === "dodge_up" ? "buff"
+      : skill.effect === "stagger" || skill.effect === "stun" || skill.effect === "taunt" || skill.effect === "bleed" || skill.effect === "burn" || skill.effect === "poison" || skill.effect === "crippled" || skill.effect === "vulnerable" ? "debuff"
+      : skill.damageMultiplier ? "damage"
+      : "buff";
+    pushFloatingAction(caster.name, skill.name, faType);
+
     let totalLifesteal = 0;
 
     // Apply skill cooldown
     if (skill.cooldown && skill.cooldown > 0) {
+      let finalCd = skill.cooldown;
+      if (caster.unlockedTalents?.includes("brd_t9_virtuoso")) {
+        finalCd = Math.max(1, finalCd - 1);
+      }
       caster.skillCooldowns = {
         ...(caster.skillCooldowns || {}),
-        [skill.id]: skill.cooldown,
+        [skill.id]: finalCd,
       };
     }
 
@@ -2633,7 +2718,7 @@ export function BattleScene({
         }
         if (
           skill.id === "brd_dis" &&
-          caster.unlockedTalents?.includes("brd_t3_dissonance_shatter")
+          caster.unlockedTalents?.includes("brd_t3_discord")
         ) {
           baseMult *= 1.2;
         }
@@ -2667,7 +2752,7 @@ export function BattleScene({
           ignoredDefPct = Math.max(ignoredDefPct, 0.2);
         }
         const enemyDef = Math.round(enemyTarget.def * (1 - ignoredDefPct));
-        let dmg = Math.max(1, baseDmg - enemyDef);
+        let dmg = applyPercentageDefense(baseDmg, enemyDef, 0);
 
         // Apply 10% randomization
         const randomFactor = 0.9 + Math.random() * 0.2;
@@ -3196,7 +3281,7 @@ export function BattleScene({
         if (e.hp > 0) {
           const evaded = resolveDefenseAndEvade(e, caster, logs);
           if (!evaded) {
-            let raw = Math.max(1, spellDmg - e.def);
+            let raw = applyPercentageDefense(spellDmg, e.def, 0);
             const randomFactor = 0.9 + Math.random() * 0.2;
             raw = Math.round(raw * randomFactor * dmgMultiplier);
 
@@ -3291,7 +3376,7 @@ export function BattleScene({
       }
       if (
         skill.id === "brd_dis" &&
-        caster.unlockedTalents?.includes("brd_t3_dissonance_shatter")
+        caster.unlockedTalents?.includes("brd_t3_discord")
       ) {
         baseMult *= 1.2;
       }
@@ -3309,7 +3394,7 @@ export function BattleScene({
         if (Math.abs(e.gridX - targetCol) <= 1 && e.hp > 0) {
           const evaded = resolveDefenseAndEvade(e, caster, logs);
           if (!evaded) {
-            let raw = Math.max(1, spellDmg - e.def);
+            let raw = applyPercentageDefense(spellDmg, e.def, 0);
             const randomFactor = 0.9 + Math.random() * 0.2;
             raw = Math.round(raw * randomFactor * dmgMultiplier);
 
@@ -3333,7 +3418,7 @@ export function BattleScene({
 
             if (
               skill.id === "brd_dis" &&
-              caster.unlockedTalents?.includes("brd_t3_dissonance_shatter")
+              caster.unlockedTalents?.includes("brd_t3_discord")
             ) {
               updatedEffs.push({ type: "vulnerable", value: 15, duration: 2 });
               logs = [
@@ -3523,7 +3608,7 @@ export function BattleScene({
         const isEvaded = resolveDefenseAndEvade(enemy, caster, logs);
         if (!isEvaded) {
           let baseDmg = 14 + caster.stats.DEX * 0.8;
-          let dmg = Math.max(1, Math.round(baseDmg - enemy.def));
+          let dmg = applyPercentageDefense(baseDmg, enemy.def, 0);
           const randomFactor = 0.9 + Math.random() * 0.2;
           dmg = Math.round(dmg * randomFactor);
           enemy.hp = Math.max(0, enemy.hp - dmg);
@@ -3604,51 +3689,8 @@ export function BattleScene({
     return false;
   };
 
-  const getCritCalculation = (char: Character) => {
-    const derived = getDerivedStats(char);
-    return derived.critDamage;
-  };
-
-  const getBaseClass = (cl: string): ClassName => {
-    if (["Berserker", "Knight"].includes(cl)) return "Warrior";
-    if (["Sharpshooter", "Bolt Slinger"].includes(cl)) return "Archer";
-    if (["Elementalist", "Summoner"].includes(cl)) return "Mage";
-    if (["High Priest", "Inquisitor"].includes(cl)) return "Cleric";
-    if (["Assassin", "Duelist"].includes(cl)) return "Rogue";
-    if (["Bard of Valor", "Bard of Chaos"].includes(cl)) return "Bard";
-    return cl as ClassName;
-  };
-
-  const getBaseDamage = (
-    caster: Character,
-    baseMult: number,
-    targetType: TargetType,
-  ): number => {
-    const derived = getDerivedStats(caster);
-    const typeFactor =
-      targetType === TargetType.ALL_ENEMIES
-        ? 0.9
-        : targetType === TargetType.COLUMN
-          ? 0.8
-          : 1.0;
-    return Math.round(derived.atk * baseMult * typeFactor);
-  };
-
-  const getBaseHealing = (
-    caster: Character,
-    baseHeal: number,
-    targetType: TargetType,
-  ): number => {
-    const hasHealBoost = caster.unlockedTalents?.includes("cle_t1_heal_boost");
-    const healBoostMult = hasHealBoost ? 1.15 : 1.0;
-    let raw = 0;
-    if (targetType === TargetType.ALL_ALLIES) {
-      raw = (8 + caster.stats.FTH * 0.8) * baseHeal * healBoostMult;
-    } else {
-      raw = (10 + caster.stats.FTH * 1.0) * baseHeal * healBoostMult;
-    }
-    return Math.round(raw);
-  };
+  // getBaseDamage, getBaseHealing, and getCritCalculation are now imported from utils/combatMath.ts
+  // getBaseClass is imported from skills_db.ts
 
   const BASIC_STRIKE_SKILL: Skill = {
     id: "basic_strike",
@@ -4240,9 +4282,51 @@ export function BattleScene({
   };
 
   return (
+    <>
+      <style>{`
+        @keyframes fa-fade-out {
+          0% { opacity: 1; transform: translate(-50%, -50%) scale(0.7); }
+          10% { opacity: 1; transform: translate(-50%, -50%) scale(1.05); }
+          15% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+          80% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+          100% { opacity: 0; transform: translate(-50%, -50%) scale(0.8) translateY(-20px); }
+        }
+        .fa-float {
+          animation: fa-fade-out 2s ease-out forwards;
+          pointer-events: none;
+          z-index: 50;
+        }
+      `}</style>
     <div
       className={`w-full grid grid-cols-1 lg:grid-cols-12 gap-5 p-4 bg-slate-950/70 border-2 ${getOuterBorderClass()} rounded-xl relative shadow-2xl`}
     >
+      {/* Floating Action Boxes */}
+      {floatingActions.map((fa) => {
+        const c = ACTION_COLORS[fa.actionType];
+        return (
+          <div
+            key={fa.id}
+            className="fa-float absolute"
+            style={{
+              left: `${fa.x}%`,
+              top: `${fa.y}%`,
+            }}
+          >
+            <div
+              className="flex flex-col items-center gap-1 px-5 py-3 rounded-lg border-2 shadow-2xl font-mono text-sm font-bold"
+              style={{
+                background: c.bg,
+                color: c.text,
+                borderColor: c.border,
+              }}
+            >
+              <span className="text-[11px] opacity-90">{fa.actorName}</span>
+              <span className="text-base tracking-wide">⬥ {fa.skillName} ⬥</span>
+            </div>
+          </div>
+        );
+      })}
+
       {/* Initiative Line Timeline */}
       <div className="lg:col-span-12 bg-slate-900 border border-slate-800 p-2.5 rounded-lg flex items-center justify-between overflow-x-auto gap-4">
         <div className="flex items-center gap-2 font-mono text-xs uppercase font-bold text-amber-500 border-r border-slate-800 pr-3 shrink-0">
@@ -5003,9 +5087,17 @@ export function BattleScene({
                       <div className="bg-slate-950 p-2 rounded border border-slate-800 flex justify-between">
                         <span className="text-slate-400">DEF</span>
                         <strong className="text-indigo-400">
-                          {derived.def}
+                          {derived.def} <span className="text-[9px] text-indigo-500">({Math.round(100 * derived.def / (100 + derived.def))}% red.)</span>
                         </strong>
                       </div>
+                      {derived.flatDamageReduction > 0 && (
+                        <div className="bg-slate-950 p-2 rounded border border-amber-900 flex justify-between">
+                          <span className="text-slate-400">Flat DR</span>
+                          <strong className="text-amber-400">
+                            -{derived.flatDamageReduction}
+                          </strong>
+                        </div>
+                      )}
                       <div className="bg-slate-950 p-2 rounded border border-slate-800 flex justify-between">
                         <span className="text-slate-400">CRIT %</span>
                         <strong className="text-amber-400">
@@ -5130,6 +5222,7 @@ export function BattleScene({
         </div>
       )}
     </div>
+    </>
   );
 }
 

@@ -65,7 +65,7 @@ export const BASE_SKILLS: Record<ClassName, Skill[]> = {
       cost: 1,
       targetType: TargetType.SINGLE_ENEMY,
       damageMultiplier: 1.5,
-      cooldown: 0,
+      cooldown: 2,
     },
     {
       id: "war_wall",
@@ -97,7 +97,7 @@ export const BASE_SKILLS: Record<ClassName, Skill[]> = {
       cost: 1,
       targetType: TargetType.SINGLE_ENEMY,
       damageMultiplier: 1.3,
-      cooldown: 0,
+      cooldown: 2,
     },
     {
       id: "arc_rain",
@@ -117,7 +117,7 @@ export const BASE_SKILLS: Record<ClassName, Skill[]> = {
       effect: "multiplier",
       effectValue: 15,
       effectDuration: 3,
-      cooldown: 3,
+      cooldown: 2,
     },
   ],
   Mage: [
@@ -131,7 +131,7 @@ export const BASE_SKILLS: Record<ClassName, Skill[]> = {
       effect: "burn",
       effectValue: 8,
       effectDuration: 3,
-      cooldown: 0,
+      cooldown: 2,
     },
     {
       id: "mag_storm",
@@ -182,7 +182,7 @@ export const BASE_SKILLS: Record<ClassName, Skill[]> = {
       cost: 2,
       targetType: TargetType.SINGLE_ENEMY,
       damageMultiplier: 1.6,
-      cooldown: 0,
+      cooldown: 2,
     },
   ],
   Rogue: [
@@ -193,7 +193,7 @@ export const BASE_SKILLS: Record<ClassName, Skill[]> = {
       cost: 1,
       targetType: TargetType.SINGLE_ENEMY,
       damageMultiplier: 1.4,
-      cooldown: 0,
+      cooldown: 2,
     },
     {
       id: "rog_bleed",
@@ -205,7 +205,7 @@ export const BASE_SKILLS: Record<ClassName, Skill[]> = {
       effect: "bleed",
       effectValue: 12,
       effectDuration: 3,
-      cooldown: 1,
+      cooldown: 2,
     },
     {
       id: "rog_shadow",
@@ -241,7 +241,7 @@ export const BASE_SKILLS: Record<ClassName, Skill[]> = {
       effect: "stagger",
       effectValue: 1,
       effectDuration: 1,
-      cooldown: 0,
+      cooldown: 2,
     },
     {
       id: "brd_lute",
@@ -482,7 +482,7 @@ export const ADVANCED_SKILLS: Record<AdvancedClassName, Skill[]> = {
       description: "Passive activation. When the Mage uses any spell costing 2+ Energy, the next spell costs 1 less Energy.",
       cost: 0,
       targetType: TargetType.SELF,
-      cooldown: 1,
+      cooldown: 2,
     },
     {
       id: "ele_shatter",
@@ -670,7 +670,7 @@ export const ADVANCED_SKILLS: Record<AdvancedClassName, Skill[]> = {
       cost: 1,
       targetType: TargetType.SINGLE_ENEMY,
       damageMultiplier: 0.9,
-      cooldown: 1,
+      cooldown: 2,
     },
     {
       id: "asn_venom_cascade",
@@ -724,7 +724,7 @@ export const ADVANCED_SKILLS: Record<AdvancedClassName, Skill[]> = {
       description: "Passive trigger: whenever the Duelist dodges, they immediately deal a free counter-attack for (8 + DEX*0.9) damage.",
       cost: 0,
       targetType: TargetType.SELF,
-      cooldown: 0,
+      cooldown: 2,
     },
     {
       id: "due_whirlwind",
@@ -823,7 +823,7 @@ export const ADVANCED_SKILLS: Record<AdvancedClassName, Skill[]> = {
     {
       id: "bch_cacophony",
       name: "Cacophony Wave",
-      description: " sonic chaos: reduces ATK by 10% and DEF by 10% for 2 turns. Applies Dissonance for 1 turn.",
+      description: "Unleashes sonic chaos: reduces ATK by 10% and DEF by 10% for 2 turns. Applies Dissonance for 1 turn.",
       cost: 1,
       targetType: TargetType.ALL_ENEMIES,
       cooldown: 3,
@@ -1101,6 +1101,7 @@ export function getDerivedStats(character: { stats: Stats; class: CharacterClass
   let flatCritBonus = 0;
   let flatDodgeBonus = 0;
   let flatDefBonus = 0;
+  let flatDamageReduction = 0;
   let flatAccuracyBonus = 0;
   let critDmgMultiplierBonus = 0;
 
@@ -1120,6 +1121,7 @@ export function getDerivedStats(character: { stats: Stats; class: CharacterClass
         }
         if (node.flatMaxHp) flatMaxHpBonus += node.flatMaxHp;
         if (node.flatDef) flatDefBonus += node.flatDef;
+        if (node.flatDamageReduction) flatDamageReduction += node.flatDamageReduction;
         if (node.flatCrit) flatCritBonus += node.flatCrit;
         if (node.flatDodge) flatDodgeBonus += node.flatDodge;
         if (node.id === "rog_t8_cuts") {
@@ -1129,6 +1131,8 @@ export function getDerivedStats(character: { stats: Stats; class: CharacterClass
     });
   }
   
+  // Sum equipment stat bonuses and flat bonuses in a single pass
+  let flatAtkBonus = 0;
   if (equipment) {
     Object.values(equipment).forEach(item => {
       if (item) {
@@ -1140,11 +1144,12 @@ export function getDerivedStats(character: { stats: Stats; class: CharacterClass
             }
           });
         }
-        if (item.flatMaxHp) flatMaxHpBonus += item.flatMaxHp;
-        if (item.flatCrit) flatCritBonus += item.flatCrit;
-        if (item.flatDodge) flatDodgeBonus += item.flatDodge;
-        if (item.flatDef) flatDefBonus += item.flatDef;
+        if (item.flatMaxHp)    flatMaxHpBonus    += item.flatMaxHp;
+        if (item.flatCrit)     flatCritBonus     += item.flatCrit;
+        if (item.flatDodge)    flatDodgeBonus    += item.flatDodge;
+        if (item.flatDef)      flatDefBonus      += item.flatDef;
         if (item.flatAccuracy) flatAccuracyBonus += item.flatAccuracy;
+        if (item.flatAtk)      flatAtkBonus      += item.flatAtk;
       }
     });
   }
@@ -1191,6 +1196,12 @@ export function getDerivedStats(character: { stats: Stats; class: CharacterClass
   }
 
   let finalHp = 80 + combinedStats.CON * 12 + (level - 1) * 15 + flatMaxHpBonus;
+  if (unlockedTalents?.includes("war_t5_juggernaut")) {
+    finalHp = Math.floor(finalHp * 1.10);
+  }
+  if (unlockedTalents?.includes("cle_t7_aura")) {
+    finalHp = Math.floor(finalHp * 1.10);
+  }
   if (race === "Dwarves") {
     finalHp = Math.floor(finalHp * 1.10);
   }
@@ -1205,21 +1216,15 @@ export function getDerivedStats(character: { stats: Stats; class: CharacterClass
   }
 
   let critChance = 5 + combinedStats.DEX * 0.4 + combinedStats.LCK * 0.5 + flatCritBonus;
+  if (unlockedTalents?.includes("mag_t9_mastery")) {
+    critChance += 15;
+  }
   let critDamage = 150 + combinedStats.STR * 0.8 + combinedStats.DEX * 0.6 + combinedStats.LCK * 1.2 + critDmgMultiplierBonus;
   if (race === "Elf") {
     critChance += 20;
     critDamage += 20;
   }
 
-  // Sum flatAtk from equipment
-  let flatAtkBonus = 0;
-  if (equipment) {
-    Object.values(equipment).forEach(item => {
-      if (item && item.flatAtk) {
-        flatAtkBonus += item.flatAtk;
-      }
-    });
-  }
 
   let baseClassVal = getBaseClass(charClass);
   let rawAtk = 0;
@@ -1259,6 +1264,7 @@ export function getDerivedStats(character: { stats: Stats; class: CharacterClass
     maxInit: 10 + level + Math.floor(combinedStats.DEX / 2),
     accuracy: 95 + combinedStats.DEX * 1 + combinedStats.LCK * 0.5 + flatAccuracyBonus,
     def: finalDef,
+    flatDamageReduction: flatDamageReduction,
     atk: finalAtk,
     combinedStats: combinedStats,
   };

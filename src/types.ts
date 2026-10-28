@@ -158,6 +158,7 @@ export interface TalentNode {
   statsBonus?: Partial<Stats>;
   flatMaxHp?: number;
   flatDef?: number;
+  flatDamageReduction?: number;
   flatCrit?: number;
   flatDodge?: number;
   skillUpgrade?: {
@@ -239,7 +240,7 @@ export interface Enemy {
   aiType: "attacker" | "spellcaster" | "tank" | "boss";
   xpAwarded: number;
   goldAwarded: number;
-  dropMaterials?: string[];
+  dropMaterials?: { id: string; quantity: number }[];
   skillCooldowns?: Record<string, number>;
 }
 

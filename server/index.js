@@ -69,6 +69,13 @@ wss.on("connection", (ws, req) => {
   ws.on("message", (rawData) => {
     try {
       const message = JSON.parse(rawData.toString());
+
+      // Handle PING keepalive — respond directly to sender
+      if (message.type === "PING") {
+        ws.send(JSON.stringify({ type: "PONG" }));
+        return;
+      }
+
       const { channel, message: payload } = message;
 
       // Relay to ALL OTHER clients in the same room

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { ClassName, Character, Stats, Equipment } from "../types";
 import { START_STATS, CLASS_AVATARS } from "../skills_db";
 import { syncBridge } from "../utils/sync";
@@ -59,7 +59,7 @@ export function BroadcastLobby({ onStartGame, activeProfile, onProfileUpdate }: 
               avatarUrl: activeProfile.avatarUrl || CLASS_AVATARS[baseCls],
               gridX: 1,
               gridY: 1,
-              inventory: activeProfile.inventory || [],
+              inventory: [],
             };
           }
           return c;
@@ -152,7 +152,7 @@ export function BroadcastLobby({ onStartGame, activeProfile, onProfileUpdate }: 
       unlockedTalentsByClass: myProfile?.unlockedTalentsByClass || {},
       avatarUrl: myProfile?.avatarUrl || CLASS_AVATARS[myLobbyClass],
       race: myProfile?.race || "Human",
-      inventory: myProfile?.inventory || [],
+      inventory: [],
     },
     ...lobbyPlayers
   ];
@@ -212,7 +212,7 @@ export function BroadcastLobby({ onStartGame, activeProfile, onProfileUpdate }: 
             unlockedTalentsByClass: myProfile?.unlockedTalentsByClass || {},
             avatarUrl: myProfile?.avatarUrl || CLASS_AVATARS[myLobbyClass],
             race: myProfile?.race || "Human",
-            inventory: myProfile?.inventory || [],
+            inventory: [],
           }
         });
       } else if (type === "LOBBY_REQUEST_PLAYERS") {
@@ -235,7 +235,7 @@ export function BroadcastLobby({ onStartGame, activeProfile, onProfileUpdate }: 
             unlockedTalentsByClass: myProfile?.unlockedTalentsByClass || {},
             avatarUrl: myProfile?.avatarUrl || CLASS_AVATARS[myLobbyClass],
             race: myProfile?.race || "Human",
-            inventory: myProfile?.inventory || [],
+            inventory: [],
           }
         });
       } else if (type === "LOBBY_PONG" || type === "LOBBY_UPDATE") {
@@ -284,7 +284,7 @@ export function BroadcastLobby({ onStartGame, activeProfile, onProfileUpdate }: 
             unlockedTalentsByClass: p.unlockedTalentsByClass || {},
             fallenStacks: 0,
             race: p.race || "Human",
-            inventory: p.inventory || [],
+            inventory: [],
           };
         });
         onStartGame(fullParty, "multiplayer", roomId, myPlayerId);
@@ -310,7 +310,7 @@ export function BroadcastLobby({ onStartGame, activeProfile, onProfileUpdate }: 
         unlockedTalentsByClass: myProfile?.unlockedTalentsByClass || {},
         avatarUrl: myProfile?.avatarUrl || CLASS_AVATARS[myLobbyClass],
         race: myProfile?.race || "Human",
-        inventory: myProfile?.inventory || [],
+        inventory: [],
       }
     });
 
@@ -323,34 +323,42 @@ export function BroadcastLobby({ onStartGame, activeProfile, onProfileUpdate }: 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [p2pMode, roomId, myLobbyName, myLobbyClass, myGridX, myReady, myPlayerId, onStartGame, myProfile, isLobbyHost]);
 
+  const lastBroadcastRef = useRef<string>("");
+
   const triggerUpdateBroadcast = () => {
     if (p2pMode === "multiplayer" && roomId) {
+      const payload = {
+        id: myPlayerId,
+        name: myLobbyName,
+        cls: myLobbyClass,
+        isHost: isLobbyHost,
+        gridX: myGridX,
+        gridY: myGridY,
+        ready: myReady,
+        level: myProfile?.level ?? 1,
+        xp: myProfile?.xp ?? 0,
+        talentPoints: myProfile?.talentPoints ?? 0,
+        unlockedTalents: myProfile?.unlockedTalents ?? [],
+        talentPointsByClass: myProfile?.talentPointsByClass || {},
+        unlockedTalentsByClass: myProfile?.unlockedTalentsByClass || {},
+        avatarUrl: myProfile?.avatarUrl || CLASS_AVATARS[myLobbyClass],
+        race: myProfile?.race || "Human",
+      };
+
+      const payloadStr = JSON.stringify(payload);
+      if (lastBroadcastRef.current === payloadStr) return;
+      lastBroadcastRef.current = payloadStr;
+
       syncBridge.send(`aac-lobby-${roomId}`, {
         type: "LOBBY_UPDATE",
-        payload: {
-          id: myPlayerId,
-          name: myLobbyName,
-          cls: myLobbyClass,
-          isHost: isLobbyHost,
-          gridX: myGridX,
-          gridY: myGridY,
-          ready: myReady,
-          level: myProfile?.level ?? 1,
-          xp: myProfile?.xp ?? 0,
-          talentPoints: myProfile?.talentPoints ?? 0,
-          unlockedTalents: myProfile?.unlockedTalents ?? [],
-          talentPointsByClass: myProfile?.talentPointsByClass || {},
-          unlockedTalentsByClass: myProfile?.unlockedTalentsByClass || {},
-          avatarUrl: myProfile?.avatarUrl || CLASS_AVATARS[myLobbyClass],
-          race: myProfile?.race || "Human",
-        }
+        payload
       });
     }
   };
 
   useEffect(() => {
     triggerUpdateBroadcast();
-  }, [myLobbyName, myLobbyClass, myGridX, myGridY, myReady, myProfile, lobbyPlayers, isLobbyHost]);
+  }, [myLobbyName, myLobbyClass, myGridX, myGridY, myReady, myProfile, isLobbyHost]);
 
   // Delayed re-announce to handle WebSocket connection timing issues
   // When a player joins or creates a room, the WebSocket may not be open
@@ -378,7 +386,7 @@ export function BroadcastLobby({ onStartGame, activeProfile, onProfileUpdate }: 
           unlockedTalentsByClass: myProfile?.unlockedTalentsByClass || {},
           avatarUrl: myProfile?.avatarUrl || CLASS_AVATARS[myLobbyClass],
           race: myProfile?.race || "Human",
-          inventory: myProfile?.inventory || [],
+          inventory: [],
         }
       });
     }, 500);
@@ -524,7 +532,7 @@ export function BroadcastLobby({ onStartGame, activeProfile, onProfileUpdate }: 
       },
       statusEffects: [],
       fallenStacks: 0,
-      inventory: idx === 0 ? (activeProfile?.inventory || []) : [],
+      inventory: [],
     } as Character));
     onStartGame(preparedParty, "solo", "LOCAL", "solo");
   };
@@ -957,7 +965,7 @@ export function BroadcastLobby({ onStartGame, activeProfile, onProfileUpdate }: 
                         username: myLobbyName,
                         level: 1,
                         xp: 0,
-                        gold: 150,
+                        gold: 50,
                         talentPoints: 3,
                         unlockedTalents: [],
                         avatarUrl: url
@@ -1021,7 +1029,7 @@ export function BroadcastLobby({ onStartGame, activeProfile, onProfileUpdate }: 
                         username: myLobbyName,
                         level: 1,
                         xp: 0,
-                        gold: 150,
+                        gold: 50,
                         talentPoints: 3,
                         unlockedTalents: [],
                         avatarUrl: "",

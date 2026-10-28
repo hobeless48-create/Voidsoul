@@ -1,0 +1,96 @@
+=============================================================
+🌟 VOID SOUL: GAME GUIDE & MECHANICS 🌟
+=============================================================
+
+Welcome to the comprehensive guide for Void Soul! This document
+explains the intricate details of the game, from basic flows to
+advanced combat mechanics.
+
+=============================================================
+📖 1. THE MYSTERY & GOAL
+=============================================================
+In the shadowed annals of Eldrath, ancient kingdoms cling to a 
+fragile peace. The Glimmering Woods, once a passage between realms, 
+has been corrupted. Shadow magic seeps from long-sealed catacombs, 
+twisting beasts and birthing horrors. 
+
+Your ultimate goal: Assemble a party of heroes, clear the perilous
+stages, navigate the corrupted lands, and defeat the Lich King in 
+the Cursed Catacombs to save the world from eternal darkness!
+
+=============================================================
+🔄 2. HOW THE GAME WORKS (GAME FLOW)
+=============================================================
+The core loop of the game is:
+LOBBY ➡️ MAP ➡️ BATTLE ➡️ CAMP ➡️ MAP ... ➡️ VICTORY
+
+• 🏰 LOBBY: Form your party (up to 4 heroes), manage talents and gear.
+• 🗺️ MAP: Choose your path! Pick between combat, elite combat, events, 
+        or merchant nodes.
+• ⚔️ BATTLE: Turn-based tactical combat.
+• 🏕️ CAMP: Rest to heal, craft gear, buy/sell, and stash gold.
+• 🎭 PROMOTION: At levels 15, 30, 50, and 75, characters advance 
+             to more powerful classes!
+
+=============================================================
+⚔️ 3. COMBAT DETAILS: SKILLS, DAMAGE & DEFENSE
+=============================================================
+Combat happens on a 3x3 grid (Frontline, Midline, Backline).
+
+• 💥 Damage: 
+  Calculated using your class's base scaling (e.g., Warrior uses STR/CON, 
+  Mage uses INT) multiplied by the Skill's multiplier.
+
+• 🛡️ Defense (DEF) & Block:
+  DEF reduces incoming damage flatly (minimum 1 damage).
+  Block (based on STR/CON) reduces damage further. 
+  Shields absorb damage before HP. Guard stance halves incoming damage!
+
+• 💨 Dodge & Accuracy:
+  Dodge is capped at 30%. Accuracy counters high-dodge enemies.
+
+• ✨ Skills & Status Effects:
+  Use Energy to cast skills. Apply powerful status effects:
+  🔥 Burn (Damage over time)
+  🌿 Poison (Damage over time)
+  🩸 Bleed (Damage over time)
+  🛡️ Taunt (Forces enemies to attack you)
+  💫 Stagger/Stun (Skips turn)
+
+=============================================================
+🗺️ 4. CHAPTERS & EVENTS
+=============================================================
+• 🏔️ Chapters:
+  Each chapter consists of 5 areas (Forest has 8). You must clear the 
+  boss at the end to advance. The path branches (e.g., Cave vs Dungeon).
+
+• 🎲 Events (>70 Unique Encounters):
+  You will encounter mysteries, goblin ambushes, and strange rituals.
+  You make choices that involve Stat Checks (e.g., High STR to lift a boulder).
+  - Success: Rewards (Gold, XP, Items, Buffs)
+  - Failure: Consequences (Damage, Debuffs, Forced Combat)
+
+=============================================================
+🔨 5. CRAFTING & ITEMS
+=============================================================
+• 🎒 Equipment:
+  10 Slots: Weapon, Offhand, Helmet, Chest, Legs, Boots, Ring, 
+  Bracelet, Necklace, Charm.
+
+• 🧪 Crafting:
+  Collect materials from battles and events to craft powerful gear at the Camp!
+  
+  Common Materials include:
+  🪨 Iron Ore        🐺 Wolf Pelt
+  🌸 Magic Bloom     🦴 Ancient Bone
+  💎 Voidstone       🩸 Demon Blood
+
+  Combine them at the Camp menu to create powerful weapons, armors, and
+  consumables like healing potions!
+
+=============================================================
+🌐 MULTIPLAYER (P2P)
+=============================================================
+Play cooperatively with friends! Vote on map nodes and event choices.
+The host handles the AI, while everyone shares the stash and gold.
+Work together to save Eldrath!

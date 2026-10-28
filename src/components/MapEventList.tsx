@@ -109,6 +109,7 @@ interface MapEventListProps {
   setActiveStoryIndex: (idx: number | null) => void;
   activeShopOpen: boolean;
   setActiveShopOpen: (open: boolean) => void;
+  activeShopWares: string[];
   p2pMode: "solo" | "multiplayer";
   votes: Record<string, string>;
   countdown: number | null;
@@ -140,6 +141,7 @@ export function MapEventList({
   setActiveStoryIndex,
   activeShopOpen,
   setActiveShopOpen,
+  activeShopWares,
   p2pMode,
   votes,
   countdown,
@@ -157,102 +159,7 @@ export function MapEventList({
   const buyerChar = party.find((p) => p.id === buyerId) || party[0];
   const activeCharInv = buyerChar?.inventory || [];
 
-  // Generate random shop items each time shop is opened
-  const generateShopWares = (): string[] => {
-    // Regular consumables and materials pool
-    const regularItems = [
-      "minor_heal",
-      "major_heal",
-      "regeneration_elixir",
-      "energy_brew",
-      "iron_ore",
-      "wolf_pelt",
-      "magic_bloom",
-      "lucky_clover",
-      "antidote",
-      "stun_cure",
-      "burn_cure",
-      "freeze_cure",
-      "shock_cure",
-      "poison_vial",
-      "stun_grenade",
-      "burn_powder",
-      "freeze_crystal",
-      "shock_orb",
-      "strength_potion",
-      "dexterity_potion",
-      "constitution_potion",
-      "intelligence_potion",
-      "faith_potion",
-      "charisma_potion",
-      "luck_potion",
-    ];
-
-    // Special shop items pool (the 35 items we added)
-    const specialItems = [
-      "cursed_blade_of_vareth",
-      "stormreaver_longbow",
-      "soulflame_grimoire",
-      "seraphs_judgment_hammer",
-      "phantom_eclipse_dagger",
-      "entropys_lament_lyre",
-      "warlords_titan_cleaver",
-      "riftweaver_staff",
-      "abyssal_sovereign_plate",
-      "starweaver_robes",
-      "wraithsilk_shroud",
-      "divine_seraph_vestments",
-      "volcanic_fury_greaves",
-      "eaglelord_winged_boots",
-      "dread_sovereign_helm",
-      "voidwalker_crown",
-      "ring_of_eternal_fury",
-      "seraphs_tear_of_life",
-      "phantom_mirror_pendant",
-      "dragonheart_core_amulet",
-      "luckweavers_fate_thread",
-      "void_anchor_of_stability",
-      "crusaders_unbreakable_oath",
-      "hawkeyes_eternal_focus",
-      "phoenix_rebirth_charm",
-      "archdemon_essence_vial",
-      "void_power_crystal",
-      "alliance_holy_blessing",
-      "demon_eye_of_true_sight",
-      "chaos_elixir_of_transcendence",
-      // Boss accessories — chapter boss-themed, shop-exclusive
-      "timbergiant_heartwood_core",
-      "bone_drake_skeletal_wing",
-      "archdemon_smoldering_horn",
-      "vareth_soul_crystal",
-    ];
-
-    // Select 1 random special item (locked, special equipment)
-    const specialIndex = Math.floor(Math.random() * specialItems.length);
-    const selectedSpecialItem = specialItems[specialIndex];
-
-    // Select 9 random regular items (total 10 items in shop)
-    const selectedRegularItems: string[] = [];
-    while (selectedRegularItems.length < 9) {
-      const randomIndex = Math.floor(Math.random() * regularItems.length);
-      const randomItem = regularItems[randomIndex];
-      if (!selectedRegularItems.includes(randomItem)) {
-        selectedRegularItems.push(randomItem);
-      }
-    }
-
-    return [selectedSpecialItem, ...selectedRegularItems];
-  };
-
-  // Shop wares - generate random items
-  const [shopWares, setShopWares] = useState<string[]>([]);
-
-  // Generate shop items when shop opens
-  useEffect(() => {
-    if (activeShopOpen) {
-      setShopWares(generateShopWares());
-    }
-  }, [activeShopOpen]);
+  // Shop wares - provided by Host via activeShopWares prop
 
   const handleBuyShopWare = (itemId: string) => {
     const item = ITEMS_DATABASE[itemId];
@@ -421,9 +328,7 @@ export function MapEventList({
               const nodeVotes = Object.values(votes).filter(
                 (v) => v === `node_${i}`,
               ).length;
-              const isMyVote =
-                votes[Object.keys(votes).find((k) => k === "me") || ""] ===
-                `node_${i}`; // or simple highlight checks
+              const isMyVote = votes[myPlayerId] === `node_${i}`;
 
               return (
                 <button
@@ -562,7 +467,7 @@ export function MapEventList({
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
-            {shopWares.map((wareId, wareIdx) => {
+            {activeShopWares.map((wareId, wareIdx) => {
               const item = ITEMS_DATABASE[wareId];
               if (!item) return null;
               const isSpecial = wareIdx === 0; // First item is the special equipment

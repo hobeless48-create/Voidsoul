@@ -1,0 +1,67 @@
+=============================================================
+🛠️ VOID SOUL: COMPREHENSIVE TESTING CHECKLIST 🛠️
+=============================================================
+Instructions: 
+As each item is verified through static code analysis, logic checks, 
+or unit tests, it will be marked with "w/" at the end of the line.
+
+=============================================================
+1. LOBBY & CHARACTER CREATION
+=============================================================
+[ ] Character creation initializes correct base stats for all 6 classes.
+[ ] Race modifiers are correctly applied (e.g. Elf +20% crit, Succubus -20% HP).
+[ ] Multiplayer Lobby (P2P) syncs party members properly.
+[ ] Host and Client connections handle disconnects safely.
+
+=============================================================
+2. MAP & EVENTS
+=============================================================
+[ ] Map node generation correctly caps at the area limit (e.g., Forest = 8 areas).
+[ ] Branching paths correctly update the `way` and `path` variables.
+[ ] Stat Checks in events use the highest party stat correctly.
+[ ] Event rewards (Gold, XP, Items) are given to the correct players/party.
+[ ] Event punishments (Damage, Status Effects) apply correctly without causing softlocks.
+[ ] Multiplayer voting triggers correctly when >50% vote.
+
+=============================================================
+3. BATTLE MECHANICS & COMBAT
+=============================================================
+[ ] Initiative calculation includes random rolls and Support class +3 bonus.
+[ ] Turn order sorts correctly and loops without skipping characters.
+[ ] Target selection works for all types (Single, AoE, Column, Self, Allies).
+[ ] Melee restriction prevents Warriors from attacking from Column 3.
+[ ] Damage Formula calculates correctly based on specific class scaling (STR/CON/INT etc).
+[ ] Defense and Block correctly mitigate incoming damage (minimum 1 damage).
+[ ] Critical hits apply 1.5x damage.
+[ ] Dodge calculation correctly caps at 30% and successfully evades attacks.
+[ ] Status Effects (Burn, Poison, Bleed) apply damage at the start/end of turns.
+[ ] Status Effects (Stun, Stagger) correctly skip turns.
+[ ] EXP and Gold are correctly awarded upon victory.
+[ ] Defeat conditions trigger properly (Fallen Stacks increment, 4th = Permadeath).
+
+=============================================================
+4. CAMPING, CRAFTING, & INVENTORY
+=============================================================
+[ ] Rest option heals exactly 30% of max HP for all party members.
+[ ] Shop correctly deducts gold and adds items to inventory.
+[ ] Inventory limits or stacking logic works correctly.
+[ ] Crafting recipes unlock and consume correct materials.
+[ ] Shared Stash successfully stores and retrieves gold/items across multiplayer.
+
+=============================================================
+5. LEVELING & PROGRESSION
+=============================================================
+[ ] XP thresholds correctly level up characters.
+[ ] Level up correctly awards 1 Talent Point and 3 Stat Points.
+[ ] Class Promotion triggers exactly at levels 15, 30, 50, and 75.
+[ ] Promoting changes the class and recalculates base stats correctly.
+[ ] Talent Tree node unlocking respects parent-child requirements.
+[ ] Passive Talents correctly update character stats in real-time.
+
+=============================================================
+6. EDGE CASES & EXPLOIT PREVENTION
+=============================================================
+[ ] Gold cannot drop below 0 during purchases.
+[ ] HP cannot exceed maxHp during healing.
+[ ] Prevent division by zero in any custom damage/healing formulas.
+[ ] Verify items used in combat are successfully deducted from inventory.
